@@ -3,6 +3,8 @@
 ToxPred is an interactive web application built with Gradio, designed to provide toxicity prediction, property prediction, and visualization analysis for molecular data. It integrates a chatbot, allowing users to interact with and analyze prediction results through natural language.
 
 ## Key Features
+Deployed version(web app): https://bohrium.dp.tech/apps/tox-agents
+## Key Features
 
 1.  **XYZ to NPZ File Conversion**:
     *   Users can upload molecular structure files in `.xyz` format.
