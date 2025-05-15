@@ -1,8 +1,3 @@
-"""
-toxpre.py - 主程序入口
-该代码实现了一个基于gradio的交互式界面，用于处理分子数据的预测和分析。
-整合了聊天机器人功能和分子分析功能。
-"""
 
 import gradio as gr
 from chatbot import ChatInterface
@@ -28,10 +23,9 @@ logger = logging.getLogger(__name__)
 class IntegratedInterface:
     def __init__(self):
         self.chat_interface = ChatInterface()
-        self.current_model = "google/gemini-2.0-flash-thinking-exp:free"  # 添加当前模型跟踪
+        self.current_model = "google/gemini-2.0-flash-thinking-exp:free"
         
     def handle_analysis_click(self, export_path, export_data, chatbot, image_input, model_name, custom_model=""):
-        """处理Analysis按钮点击事件"""
         try:
             if not self.chat_interface.client:
                 return (
@@ -41,19 +35,16 @@ class IntegratedInterface:
                     gr.update(visible=True)
                 )
             
-            # 使用当前选择的模型
             actual_model = custom_model if model_name == "custom" else model_name
             
-            # 处理导出数据并发送到聊天
             chat_history, error = self.process_export_for_chat(
-                export_path, 
-                export_data, 
-                chatbot, 
+                export_path,
+                export_data,
+                chatbot,
                 hide_prompt=True,
-                model_name=actual_model  # 传递当前选择的模型
+                model_name=actual_model
             )
             
-            # 图片处理逻辑...
             image_update = gr.update(visible=True)
             if export_path and os.path.exists(export_path.name):
                 try:
@@ -78,19 +69,16 @@ class IntegratedInterface:
 
 
     def process_export_for_chat(self, export_path, export_data, chatbot_history, hide_prompt=False, model_name=None):
-        """Process the exported data and send it to the chat"""
         if not export_path or not export_data:
             return chatbot_history, "Export files not found"
         
         try:
-            # 读取JSON数据并创建提示词...
             with open(export_data.name, 'r') as f:
                 json_data = json.load(f)
             
             json_prompt = ("You are an expert structural chemist and biologist. You have been provided with data about a molecule, including its predicted toxicity probability and other property predictions, which are appended below in JSON format. In this data, 'probability' represents the predicted toxicity probability, where 0 indicates non-toxic and 1 indicates toxic, and 'property_prediction' contains all additional predicted parameters of the molecule. Using your profound knowledge in chemistry and biology, please analyze this data and write a detailed report of at least 1000 words. In your report, interpret the significance of the toxicity probability, discuss the other predicted properties, and explain their potential implications for the molecule's behavior, safety, or applications. Provide your analysis in a direct and continuous format without section breaks." + 
                          json.dumps(json_data, ensure_ascii=False))
             
-            # 读取图片并创建消息内容...
             with open(export_path.name, 'rb') as f:
                 image_data = base64.b64encode(f.read()).decode('utf-8')
             
@@ -106,38 +94,33 @@ class IntegratedInterface:
                 hide_prompt=hide_prompt
             )
             
-            # 使用指定的模型进行处理
             return self.chat_interface.process_message(
                 json_prompt,
                 export_path.name,
                 True,
                 chatbot_history,
-                model_name or self.current_model  # 使用指定的模型或默认模型
+                model_name or self.current_model
             )
             
         except Exception as e:
             return chatbot_history, f"Error processing export: {str(e)}"
 
     def process_predictions(self, file, prop_model_path, ref_path, bin_model_path):
-        """处理毒性预测"""
         if not file:
             return None, "Error: No file", None, "Error: No file", None
         
         try:
-            # Property prediction
             prop_output, prop_message = process_property_prediction(
                 file, 
                 prop_model_path,
                 ref_path
             )
             
-            # Binary prediction
             bin_output, bin_message = process_binary_prediction(
                 file,
                 bin_model_path
             )
             
-            # Create probability plot
             prob_plot = None
             if bin_output:
                 prob_plot = create_probability_plot(bin_output)
@@ -148,11 +131,9 @@ class IntegratedInterface:
 
     def create_interface(self):
         with gr.Blocks() as demo:
-            # State variables
             current_image = gr.State(None)
             species_data_state = gr.State(None)
 
-            # XYZ to NPZ Converter Tab
             with gr.Tab("XYZ to NPZ Converter"):
                 gr.Markdown("### Step 1: Convert XYZ to NPZ")
                 xyz_input = gr.File(label="Upload XYZ file")
@@ -160,9 +141,7 @@ class IntegratedInterface:
                 conversion_output = gr.Textbox(label="Status", lines=2)
                 npz_file = gr.File(label="Download NPZ file")
 
-            # Combined Toxicity Prediction and Visualization Tab
             with gr.Tab("Toxicity Prediction & Visualization"):
-                # Add chat interface at the top
                 chatbot = gr.Chatbot(
                     height=500,
                     label="Chat History",
@@ -180,7 +159,6 @@ class IntegratedInterface:
                         submit_btn = gr.Button("Send")
                         clear_btn = gr.Button("Clear")
 
-                # Chat configuration components
                 multimodal_enabled = gr.Checkbox(
                     label="Enable Image Input",
                     value=False
@@ -218,9 +196,8 @@ class IntegratedInterface:
                         interactive=False
                     )
 
-                gr.Markdown("""### Here! : Predict & Visualize: First select different models, then upload the npz file, and the prediction task will start immediately after uploading. Clicking on "npz to xyz" allows you to visualize the molecular structure of the sequence. After the prediction is complete, drag the frame selector to view the structure and corresponding results. Clicking on "output" will save the image and results of that frame, while clicking on "analyze" will send the results of that frame to the Agent dialog.""")  
+                gr.Markdown("""### Here! : Predict & Visualize: First select different models, then upload the npz file, and the prediction task will start immediately after uploading. Clicking on "npz to xyz" allows you to visualize the molecular structure of the sequence. After the prediction is complete, drag the frame selector to view the structure and corresponding results. Clicking on "output" will save the image and results of that frame, while clicking on "analyze" will send the results of that frame to the Agent dialog.""")
                 with gr.Row():
-                    # Left Column - Toxicity Prediction
                     with gr.Column(scale=1):
                         npz_file_input = gr.File(label="Upload NPZ file", file_types=[".npz"])
                         
@@ -250,18 +227,14 @@ class IntegratedInterface:
                         xyz_conversion_output = gr.Textbox(label="XYZ Status", lines=1)
                         xyz_file_output = gr.File(label="XYZ file", visible=False)
 
-                    # Right Column - Visualization
                     with gr.Column(scale=1):
                         probability_plot = gr.Plot(label="Probability Analysis")
                         
-                        # Molecular Structure
                         output_image = gr.Image(label="Structure View")
                         color_legend = gr.HTML(label="Color Legend")
                         
-                        # Hidden XYZ Input for Visualization
                         xyz_input_vis = gr.File(label="XYZ File", visible=False)
                         
-                        # Visualization Controls
                         with gr.Accordion("Visualization Controls", open=False):
                             frame_slider = gr.Slider(
                                 minimum=0, maximum=0, step=1, value=0,
@@ -290,7 +263,6 @@ class IntegratedInterface:
                             export_path = gr.File(label="Export Results")
                             export_data = gr.File(label="Export Data")
 
-            # Nano Reactor Tab
             with gr.Tab("Nano Reactor"):
                 gr.Markdown("# Molreac Nano Reactor Interface")
                 
@@ -331,15 +303,12 @@ class IntegratedInterface:
                 extract_output = gr.Textbox(label="Extraction Status")
                 fragment_files = gr.File(label="Fragment Coordinates")
 
-            # Event Handlers
-            # XYZ to NPZ Conversion
             convert_button.click(
                 fn=convert_xyz_to_npz,
                 inputs=[xyz_input],
                 outputs=[conversion_output, npz_file]
             )
 
-            # NPZ to XYZ Conversion and Visualization
             convert_to_xyz.click(
                 fn=convert_npz_to_xyz,
                 inputs=[npz_file_input],
@@ -358,7 +327,6 @@ class IntegratedInterface:
                 outputs=[output_image, color_legend, frame_slider, current_image]
             )
 
-            # Toxicity Prediction
             npz_file_input.change(
                 fn=self.process_predictions,
                 inputs=[
@@ -376,7 +344,6 @@ class IntegratedInterface:
                 ]
             )
 
-            # Export and Analysis
             export_btn.click(
                 fn=export_frame_data,
                 inputs=[

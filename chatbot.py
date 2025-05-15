@@ -1,4 +1,3 @@
-# /mnt/backup2/ai4s/backupunimolpy/chatbot.py
 import gradio as gr
 import os
 from openai import OpenAI
@@ -13,11 +12,9 @@ class ChatMemory:
         self.conversation_history = []
         
     def add_message(self, role: str, content: Union[str, List], has_image: bool = False, hide_prompt: bool = False):
-        """添加消息到对话历史"""
-        # 如果是新的文本消息,移除之前消息中的图片相关内容
         if not has_image:
             self.conversation_history = [
-                msg for msg in self.conversation_history 
+                msg for msg in self.conversation_history
                 if not (isinstance(msg["content"], list) and len(msg["content"]) > 1)
             ]
         
@@ -25,7 +22,7 @@ class ChatMemory:
             "role": role,
             "content": content,
             "has_image": has_image,
-            "hide_prompt": hide_prompt  # 添加hide_prompt标记
+            "hide_prompt": hide_prompt
         })
         
     def get_history(self) -> List[Dict]:
@@ -39,9 +36,7 @@ class ChatMemory:
         for msg in self.conversation_history:
             if msg["role"] == "user":
                 if isinstance(msg["content"], list):
-                    # 检查是否需要隐藏提示词
                     if msg.get("hide_prompt"):
-                        # 如果是隐藏提示词的消息，只显示图片
                         has_shown_image = False
                         for content in msg["content"]:
                             if content.get("type") == "image_url" and not has_shown_image:
@@ -49,7 +44,6 @@ class ChatMemory:
                                 display_history.append((f"<img src='{image_url}' width='400'>", None))
                                 has_shown_image = True
                     else:
-                        # 正常显示所有内容
                         text = msg["content"][0]["text"]
                         if len(msg["content"]) > 1:
                             image_url = msg["content"][1]["image_url"]["url"]
@@ -59,7 +53,7 @@ class ChatMemory:
                             display_history.append((text, None))
                 else:
                     display_history.append((msg["content"], None))
-            else:  # assistant
+            else:
                 if isinstance(msg["content"], list):
                     display_history.append((None, msg["content"][0]["text"]))
                 else:
@@ -150,11 +144,9 @@ class ChatInterface:
             actual_model = custom_model if model_name == "custom" else model_name
             message_content = []
             
-            # 处理用户输入
             if user_input:
                 message_content.append({"type": "text", "text": user_input})
             
-            # 处理图片
             if multimodal_enabled and image is not None:
                 is_vision_model = self.vision_models.get(actual_model, False)
                 try:
@@ -162,14 +154,12 @@ class ChatInterface:
                         img_data = base64.b64encode(img_file.read()).decode('utf-8')
                     
                     if not is_vision_model:
-                        # 非视觉模型获取图片描述
                         image_description = self.get_image_description(image)
                         message_content = [{
-                            "type": "text", 
+                            "type": "text",
                             "text": f"{user_input}\n[Image Description: {image_description}]"
                         }]
                     else:
-                        # 视觉模型直接使用图片
                         message_content.append({
                             "type": "image_url",
                             "image_url": {"url": f"data:image/png;base64,{img_data}"}
@@ -177,15 +167,13 @@ class ChatInterface:
                 except Exception as e:
                     return history, f"Error processing image: {str(e)}"
             
-            # 添加用户消息到记忆
             self.memory.add_message(
-                "user", 
+                "user",
                 message_content,
                 has_image=(multimodal_enabled and image is not None)
             )
 
             try:
-                # 准备API消息
                 api_messages = []
                 for msg in self.memory.get_history():
                     api_msg = {"role": msg["role"]}
@@ -198,7 +186,6 @@ class ChatInterface:
                         api_msg["content"] = msg["content"]
                     api_messages.append(api_msg)
 
-                # OpenAI模型特殊处理
                 if actual_model.startswith("openai/"):
                     completion = self.client.chat.completions.create(
                         model=actual_model,
@@ -207,10 +194,9 @@ class ChatInterface:
                             "HTTP-Referer": "localhost",
                             "X-Title": "Gradio Chat Interface",
                         },
-                        extra_body={}  # 可以添加额外的参数
+                        extra_body={}
                     )
                 else:
-                    # 其他模型使用原有方式
                     completion = self.client.chat.completions.create(
                         model=actual_model,
                         messages=api_messages,
@@ -268,7 +254,6 @@ class ChatInterface:
                 type="filepath"
             )
 
-            # 可折叠的配置面板
             with gr.Accordion("API Configuration", open=False):
                 base_url = gr.Textbox(
                     label="Base URL",
@@ -311,11 +296,9 @@ class ChatInterface:
                 return gr.update(visible=enabled)
 
             def clear_chat(self):
-                """完全清除聊天历史"""
                 self.chat_interface.memory.clear()
-                self.chat_interface.memory.conversation_history = []  # 确保完全清除
+                self.chat_interface.memory.conversation_history = []
                 return None, "", gr.update(value=False), gr.update(visible=False)
-            # Event handlers
             model_select.change(
                 update_model_input,
                 inputs=[model_select],
@@ -355,7 +338,7 @@ class ChatInterface:
             )
 
             clear_btn.click(
-                fn=self.clear_chat,  # 使用类方法
+                fn=self.clear_chat,
                 outputs=[chatbot, error_box, multimodal_enabled, image_input]
             )
 
