@@ -36,21 +36,19 @@ class UnimolModel:
         """Train multiple UnIMol models with TTA"""
         predictions = []
         
-        # 确保GPU可用
         if not torch.cuda.is_available():
             logger.warning("No GPU available! Training may be slow.")
         else:
             logger.info(f"Using GPU: {torch.cuda.get_device_name(0)}")
-            torch.cuda.empty_cache()  # 清理GPU内存
+            torch.cuda.empty_cache() 
         
         for config in self.unimol_configs:
             try:
-                # 创建保存路径
+
                 exp_suffix = '_'.join(map(str, config.values()))
                 save_path = f'./exp_{exp_suffix}'
                 os.makedirs(save_path, exist_ok=True)
                 
-                # 准备训练数据
                 train_data = {
                     'coordinates': coord_data['coordinates'],
                     'atoms': coord_data['atoms'],
@@ -59,14 +57,14 @@ class UnimolModel:
 
                 model = MolTrain(
                     task='classification',
-                    data_type='molecule',  # 改为'molecule'而不是'oled'
+                    data_type='molecule',  
                     epochs=config['epochs'],
                     learning_rate=config['learning_rate'],
                     batch_size=config['batch_size'],
                     patience=config['patience'],
                     metrics='auc,f1_score,precision,recall',
                     split='random',
-                    remove_hs=False,  # 保持False以使用带H的模型
+                    remove_hs=False,  
                     save_path=save_path,
                     cuda=True,
                     amp=True,
@@ -81,18 +79,15 @@ class UnimolModel:
                     logger_level=1
                 )
 
-                # 监控GPU使用
                 logger.info(f"Pre-training GPU memory allocated: {torch.cuda.memory_allocated()/1e9:.2f} GB")
                 
-                # 训练模型
                 logger.info(f"Training UnIMol model with config: {config}")
                 model.fit(train_data)
                 
-                # 训练后监控GPU
                 logger.info(f"Post-training GPU memory allocated: {torch.cuda.memory_allocated()/1e9:.2f} GB")
-                torch.cuda.empty_cache()  # 清理GPU内存
+                torch.cuda.empty_cache()  
                 
-                # TTA预测
+                # TTA predictions
                 pred_clf = MolPredict(load_model=save_path)
                 tta_predictions = self._tta_predict(pred_clf, train_data)
                 
@@ -101,13 +96,13 @@ class UnimolModel:
                 
             except Exception as e:
                 logger.error(f"Error training UnIMol model with config {config}: {str(e)}")
-                torch.cuda.empty_cache()  # 出错时也清理GPU内存
+                torch.cuda.empty_cache()  
                 continue
         
         if not predictions:
             raise ValueError("No successful UnIMol model training!")
             
-        # 平均多个模型的预测结果
+        # Aggregate predictions
         final_predictions = np.mean(predictions, axis=0)
         return final_predictions
     
@@ -170,23 +165,18 @@ def main():
    else:
        logger.warning("No GPU available - training will be slow!")
    
-   # 创建模型
    model = UnimolModel(unimol_configs)
    
-   # 加载数据
    coord_data = load_coordinate_data()
    
-   # 训练模型
    logger.info("Training UnIMol models...")
    try:
        predictions = model.train(coord_data)
        logger.info("UnIMol training completed successfully")
        
-       # 确保预测结果是一维数组
        predictions = np.array(predictions).ravel()
        logger.info(f"Final predictions shape: {predictions.shape}")
        
-       # 保存每个fold的模型路径
        model_dirs = [d for d in os.listdir('.') if d.startswith('exp_')]
        model_dirs = [os.path.join('.', d) for d in model_dirs]
        
@@ -196,7 +186,6 @@ def main():
                'model_count': len(model_dirs)
            }, f, indent=4)
        
-       # 创建预测结果DataFrame
        submission = pd.DataFrame({
            'id': range(len(predictions)),
            'prediction': (predictions > 0.5).astype(int)
@@ -207,7 +196,6 @@ def main():
        
        submission.to_csv('unimol_submission.csv', index=False)
        
-       # 保存详细训练结果
        results = {
            'training': {
                'configs': str(unimol_configs),
@@ -228,7 +216,7 @@ def main():
            
    except Exception as e:
        logger.error(f"Error in UnIMol training or prediction: {str(e)}")
-       # 添加更多错误信息
+       torch.cuda.empty_cache()
        if 'predictions' in locals():
            logger.error(f"Predictions shape: {np.array(predictions).shape}")
            logger.error(f"Predictions type: {type(predictions)}")
