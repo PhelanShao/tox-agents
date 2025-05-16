@@ -1,165 +1,254 @@
 # src/lightrag_pdf_processor.py
 import os
 import asyncio
-import glob # For finding PDF files
+import glob
 import logging
-import textract # For PDF text extraction
+import textract
+import uvicorn
+from fastapi import FastAPI, HTTPException, Body
+from pydantic import BaseModel
+from typing import List, Dict, Union, Any, Optional
+import uuid
+import time
 
 from lightrag import LightRAG, QueryParam
-# Example: using OpenAI models. Replace if using different providers.
-from lightrag.llm.openai import openai_embed, gpt_4o_mini_complete
+from lightrag.llm.openai import openai_embed, gpt_4o_mini_complete # Example models
 from lightrag.kg.shared_storage import initialize_pipeline_status
 from lightrag.utils import setup_logger
 
-# Setup logger for this module
-setup_logger("lightrag_processor", level="INFO")
-logger = logging.getLogger("lightrag_processor")
+# Setup logger
+setup_logger("lightrag_openai_proxy_service", level="INFO")
+logger = logging.getLogger("lightrag_openai_proxy_service")
 
 # Configuration
-WORKING_DIR = "./rag_pdf_storage"  # Directory to store LightRAG data
-# !!! IMPORTANT: User needs to set this path to their PDF directory !!!
-PDF_INPUT_DIRECTORY = "./sample_pdfs" # Placeholder directory for your PDF documents
+WORKING_DIR = "./rag_pdf_storage_openai_proxy"
+PDF_INPUT_DIRECTORY = "./sample_pdfs" # User needs to set this
+SERVICE_HOST = "0.0.0.0"
+SERVICE_PORT = 8001 # Port for this RAG service
 
-async def initialize_rag_instance() -> LightRAG:
-    """Initializes and returns a LightRAG instance."""
+# Global LightRAG instance
+rag_instance: LightRAG = None
+
+# --- Pydantic Models for OpenAI API Mimicry ---
+
+class MessageContentItem(BaseModel):
+    type: str
+    text: Optional[str] = None
+    image_url: Optional[Dict[str, str]] = None
+
+class RequestMessage(BaseModel):
+    role: str
+    content: Union[str, List[MessageContentItem]]
+    name: Optional[str] = None
+
+class ChatCompletionRequest(BaseModel):
+    model: str
+    messages: List[RequestMessage]
+    temperature: Optional[float] = 0.7
+    top_p: Optional[float] = None
+    n: Optional[int] = None
+    stream: Optional[bool] = False
+    stop: Optional[Union[str, List[str]]] = None
+    max_tokens: Optional[int] = None
+    presence_penalty: Optional[float] = None
+    frequency_penalty: Optional[float] = None
+    logit_bias: Optional[Dict[str, float]] = None
+    user: Optional[str] = None
+
+class ResponseMessage(BaseModel):
+    role: str
+    content: str
+
+class Choice(BaseModel):
+    index: int = 0
+    message: ResponseMessage
+    finish_reason: str = "stop"
+    # logprobs: Optional[Any] = None # Omitting for simplicity
+
+class UsageInfo(BaseModel): # Mocked
+    prompt_tokens: int = 0 # Actual token counting for RAG is complex
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+class ChatCompletionResponse(BaseModel):
+    id: str
+    object: str = "chat.completion"
+    created: int
+    model: str
+    choices: List[Choice]
+    usage: Optional[UsageInfo] = UsageInfo() # Provide mocked usage
+    # system_fingerprint: Optional[str] = None # OpenAI specific
+
+# --- LightRAG Initialization and PDF Processing ---
+async def initialize_rag_and_load_pdfs():
+    global rag_instance
+    logger.info("Initializing LightRAG instance for OpenAI proxy service...")
     if not os.path.exists(WORKING_DIR):
         os.makedirs(WORKING_DIR)
         logger.info(f"Created working directory: {WORKING_DIR}")
 
-    # Ensure OPENAI_API_KEY is set if using OpenAI models
     if not os.getenv("OPENAI_API_KEY"):
-        logger.warning("OPENAI_API_KEY environment variable is not set. OpenAI calls will likely fail.")
-        # Consider raising an error or using a fallback if the key is essential
+        logger.warning("OPENAI_API_KEY environment variable is not set. Internal LLM calls by LightRAG might fail.")
 
-    rag = LightRAG(
+    rag_instance = LightRAG(
         working_dir=WORKING_DIR,
-        embedding_func=openai_embed,  # Replace with your preferred embedding function
-        llm_model_func=gpt_4o_mini_complete,  # Replace with your preferred LLM
+        embedding_func=openai_embed, # Used for PDF embedding
+        llm_model_func=gpt_4o_mini_complete, # LLM used by RAG for generation
     )
-    await rag.initialize_storages()
-    # Initialize pipeline status if you plan to use asynchronous document processing pipeline
+    await rag_instance.initialize_storages()
     await initialize_pipeline_status()
     logger.info("LightRAG instance initialized.")
-    return rag
 
-def find_pdf_files(pdf_directory: str) -> list[str]:
-    """Finds all PDF files in the specified directory."""
-    if not os.path.isdir(pdf_directory):
-        logger.error(f"PDF directory not found: {pdf_directory}")
-        return []
-    
-    pdf_files = glob.glob(os.path.join(pdf_directory, "*.pdf"))
-    logger.info(f"Found {len(pdf_files)} PDF files in {pdf_directory}.")
-    return pdf_files
-
-async def process_pdfs_and_insert(rag: LightRAG, pdf_files: list[str]):
-    """Extracts text from PDF files and inserts them into LightRAG."""
-    if not pdf_files:
-        logger.warning("No PDF files to process.")
-        return
-
-    documents_content = []
-    document_paths = []
-
-    for pdf_path in pdf_files:
+    if not os.path.exists(PDF_INPUT_DIRECTORY):
+        os.makedirs(PDF_INPUT_DIRECTORY)
+        logger.info(f"Created placeholder PDF directory: {PDF_INPUT_DIRECTORY}.")
+        logger.info(f"Please add your PDF documents to this directory: {os.path.abspath(PDF_INPUT_DIRECTORY)}")
         try:
-            logger.info(f"Processing PDF: {pdf_path}")
-            # textract.process returns bytes, so decode to utf-8
-            text_content_bytes = textract.process(pdf_path)
-            text_content_str = text_content_bytes.decode('utf-8').strip()
+            from reportlab.pdfgen import canvas
+            dummy_pdf_path = os.path.join(PDF_INPUT_DIRECTORY, "dummy_openai_proxy.pdf")
+            if not os.path.exists(dummy_pdf_path):
+                c = canvas.Canvas(dummy_pdf_path)
+                c.drawString(100, 750, "Dummy PDF for LightRAG OpenAI Proxy Service.")
+                c.save()
+                logger.info(f"Created a dummy PDF for testing: {dummy_pdf_path}")
+        except ImportError: logger.warning("reportlab not found, could not create dummy PDF.")
+        except Exception as e_pdf: logger.error(f"Could not create dummy PDF: {e_pdf}")
             
-            if text_content_str: # Ensure there's content to add
-                documents_content.append(text_content_str)
-                document_paths.append(pdf_path)
-                logger.info(f"Successfully extracted text from {pdf_path} (Length: {len(text_content_str)})")
-            else:
-                logger.warning(f"No text content extracted from {pdf_path}")
-        except Exception as e:
-            logger.error(f"Error processing PDF {pdf_path}: {e}")
-            # Optionally, skip this file or handle error differently
+    pdf_files = glob.glob(os.path.join(PDF_INPUT_DIRECTORY, "*.pdf"))
+    logger.info(f"Found {len(pdf_files)} PDF files in {PDF_INPUT_DIRECTORY}.")
 
-    if documents_content:
-        logger.info(f"Inserting {len(documents_content)} documents into LightRAG...")
-        # Using rag.insert for simplicity.
-        # For very large numbers of documents, consider apipeline_enqueue_documents
-        await rag.insert(documents_content, file_paths=document_paths)
-        logger.info("Documents inserted successfully.")
-    else:
-        logger.warning("No content extracted from PDFs to insert.")
-
-async def perform_query(rag: LightRAG, query_text: str):
-    """Performs a query against the RAG and prints the result."""
-    if not query_text:
-        logger.warning("Query text is empty. Skipping query.")
-        return
-
-    logger.info(f"Performing query: '{query_text}'")
-    try:
-        response = await rag.query(
-            query_text,
-            param=QueryParam(mode="hybrid")  # Example mode, can be "local", "global", "mix", "naive"
-        )
-        logger.info("Query response received.")
-        # The response object structure depends on LightRAG version and query settings.
-        # Typically, it might have attributes like response.answer or similar.
-        print("\n--- Query Result ---")
-        print(response) 
-        print("--- End of Query Result ---\n")
-
-    except Exception as e:
-        logger.error(f"Error during query: {e}")
-
-async def main_workflow():
-    """Main workflow for the PDF RAG processor."""
-    rag_instance = None
-    try:
-        # Create placeholder PDF directory if it doesn't exist
-        if not os.path.exists(PDF_INPUT_DIRECTORY):
-            os.makedirs(PDF_INPUT_DIRECTORY)
-            logger.info(f"Created placeholder PDF directory: {PDF_INPUT_DIRECTORY}.")
-            logger.info(f"Please add your PDF documents to this directory: {os.path.abspath(PDF_INPUT_DIRECTORY)}")
-            # Optionally, create a dummy PDF for testing if reportlab is available
+    if pdf_files:
+        # This part can be time-consuming for many/large PDFs.
+        # Consider making it asynchronous or a separate management command if startup time is critical.
+        all_docs_content = []
+        all_doc_paths = []
+        for pdf_path in pdf_files:
             try:
-                from reportlab.pdfgen import canvas
-                dummy_pdf_path = os.path.join(PDF_INPUT_DIRECTORY, "dummy_document.pdf")
-                if not os.path.exists(dummy_pdf_path):
-                    c = canvas.Canvas(dummy_pdf_path)
-                    c.drawString(100, 750, "This is a dummy PDF document for LightRAG testing.")
-                    c.drawString(100, 730, "LightRAG helps with retrieval-augmented generation from multiple documents.")
-                    c.drawString(100, 710, "This framework processes PDFs and allows querying their content.")
-                    c.save()
-                    logger.info(f"Created a dummy PDF for testing: {dummy_pdf_path}")
-            except ImportError:
-                logger.warning("reportlab not found, could not create dummy PDF. Please add PDFs manually to the directory.")
-            except Exception as e_pdf:
-                 logger.error(f"Could not create dummy PDF: {e_pdf}")
+                logger.info(f"Processing PDF: {pdf_path}")
+                text_bytes = textract.process(pdf_path)
+                text_str = text_bytes.decode('utf-8').strip()
+                if text_str:
+                    all_docs_content.append(text_str)
+                    all_doc_paths.append(pdf_path)
+                    logger.info(f"Extracted text from {pdf_path} (Length: {len(text_str)})")
+                else: logger.warning(f"No text extracted from {pdf_path}")
+            except Exception as e: logger.error(f"Error processing PDF {pdf_path}: {e}")
         
-        rag_instance = await initialize_rag_instance()
-        pdf_files_to_process = find_pdf_files(PDF_INPUT_DIRECTORY)
+        if all_docs_content:
+            logger.info(f"Inserting {len(all_docs_content)} documents into LightRAG...")
+            await rag_instance.insert(all_docs_content, file_paths=all_doc_paths)
+            logger.info("Documents inserted successfully.")
+        else: logger.warning("No content extracted from PDFs to insert.")
+    else: logger.warning(f"No PDFs found in '{PDF_INPUT_DIRECTORY}'. RAG knowledge base will be empty.")
 
-        if pdf_files_to_process:
-            await process_pdfs_and_insert(rag_instance, pdf_files_to_process)
+# --- FastAPI Application ---
+app = FastAPI(
+    title="LightRAG OpenAI Proxy Service",
+    description="Mimics OpenAI Chat Completions API, using LightRAG with PDF knowledge base.",
+    version="0.1.1" # Incremented version
+)
 
-            # --- Example Query ---
-            # !!! IMPORTANT: User should change this to a relevant query based on their PDFs !!!
-            sample_query = "What is retrieval-augmented generation?" # Placeholder query
-            await perform_query(rag_instance, sample_query)
+@app.on_event("startup")
+async def startup_event():
+    await initialize_rag_and_load_pdfs()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    global rag_instance
+    if rag_instance:
+        await rag_instance.finalize_storages()
+        logger.info("LightRAG instance finalized.")
+
+# Mimic OpenAI's Chat Completions endpoint
+@app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
+async def chat_completions_proxy(request: ChatCompletionRequest = Body(...)):
+    global rag_instance
+    if not rag_instance:
+        logger.error("RAG instance not initialized for /v1/chat/completions.")
+        raise HTTPException(status_code=503, detail="RAG service is not ready.")
+
+    logger.info(f"Received OpenAI API request for model: {request.model}")
+    
+    # Extract the last user message as the primary query for RAG
+    user_query_text = ""
+    if request.messages:
+        for msg in reversed(request.messages):
+            if msg.role == "user":
+                if isinstance(msg.content, str):
+                    user_query_text = msg.content
+                    break
+                elif isinstance(msg.content, list):
+                    # Concatenate text parts from multimodal content
+                    text_parts = [item.text for item in msg.content if item.type == "text" and item.text]
+                    user_query_text = "\n".join(text_parts)
+                    # Note: Image data from msg.content is not directly passed to rag_instance.query here.
+                    # The internal LLM of LightRAG (gpt_4o_mini_complete) might be vision-capable,
+                    # but rag_instance.query itself primarily works with text queries for retrieval.
+                    # For full multimodal RAG, LightRAG's query/LLM call would need specific handling.
+                    break
+    
+    if not user_query_text:
+        logger.warning("No user query text found in messages.")
+        # Return a generic response or error, mimicking OpenAI
+        return ChatCompletionResponse(
+            id=f"chatcmpl-empty-{uuid.uuid4()}",
+            created=int(time.time()),
+            model=request.model,
+            choices=[Choice(message=ResponseMessage(role="assistant", content="I received an empty query."))]
+        )
+
+    logger.info(f"Performing RAG query with: '{user_query_text[:100]}...'")
+    try:
+        # Use LightRAG to get an answer based on PDFs + internal LLM
+        # The `request.messages` (full history) is not directly passed to rag_instance.query.
+        # LightRAG's llm_model_func (gpt_4o_mini_complete) will be called with the user_query_text + retrieved context.
+        # If full conversation history is needed for the final LLM call within RAG,
+        # LightRAG's query method or llm_model_func would need to be adapted.
+        # For now, focusing on RAG for the latest query.
+        rag_response_obj = await rag_instance.query(
+            user_query_text,
+            param=QueryParam(mode="hybrid") # Defaulting to hybrid
+        )
+        
+        # Extract answer from RAG response
+        # This depends on the structure of rag_response_obj
+        if isinstance(rag_response_obj, str):
+            final_answer = rag_response_obj
+        elif hasattr(rag_response_obj, 'answer') and rag_response_obj.answer:
+            final_answer = rag_response_obj.answer
+        elif isinstance(rag_response_obj, dict) and rag_response_obj.get('answer'):
+            final_answer = rag_response_obj['answer']
         else:
-            logger.warning(f"No PDFs found in '{PDF_INPUT_DIRECTORY}'. Skipping document insertion and query.")
-            logger.warning(f"Please add PDF files to {os.path.abspath(PDF_INPUT_DIRECTORY)} and re-run.")
+            logger.warning(f"Unexpected RAG response format: {type(rag_response_obj)}. Using as string.")
+            final_answer = str(rag_response_obj)
 
+        logger.info("RAG query processed successfully.")
+        
+        # Construct OpenAI-like response
+        response_payload = ChatCompletionResponse(
+            id=f"chatcmpl-rag-{uuid.uuid4()}",
+            created=int(time.time()),
+            model=request.model, # Echoing requested model
+            choices=[
+                Choice(
+                    message=ResponseMessage(role="assistant", content=final_answer)
+                )
+            ]
+        )
+        return response_payload
+        
     except Exception as e:
-        logger.error(f"An error occurred in the main workflow: {e}", exc_info=True)
-    finally:
-        if rag_instance:
-            await rag_instance.finalize_storages()
-            logger.info("LightRAG instance finalized.")
+        logger.error(f"Error during RAG query or OpenAI response construction: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error processing RAG query: {str(e)}")
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "rag_initialized": rag_instance is not None, "pdf_dir": PDF_INPUT_DIRECTORY}
 
 if __name__ == "__main__":
-    print("Starting LightRAG PDF Processor...")
-    print(f"Make sure your PDF documents are in: {os.path.abspath(PDF_INPUT_DIRECTORY)}")
-    print("Ensure 'textract' and its dependencies (e.g., pdftotext) are installed.")
-    print("If using OpenAI, ensure OPENAI_API_KEY environment variable is set.")
+    print(f"Starting LightRAG OpenAI Proxy Service on http://{SERVICE_HOST}:{SERVICE_PORT}")
+    print(f"PDFs will be loaded from: {os.path.abspath(PDF_INPUT_DIRECTORY)}")
+    print("Ensure 'textract', 'fastapi', 'uvicorn', 'python-multipart' (for form data if ever needed by OpenAI client), and LightRAG dependencies are installed.")
+    print("If LightRAG's internal LLM is OpenAI, ensure OPENAI_API_KEY environment variable is set.")
     
-    asyncio.run(main_workflow())
-    print("LightRAG PDF Processor finished.")
+    uvicorn.run(app, host=SERVICE_HOST, port=SERVICE_PORT, log_level="info")
