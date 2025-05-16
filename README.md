@@ -2,8 +2,8 @@
 
 ToxPred is an interactive web application built with Gradio, designed to provide toxicity prediction, property prediction, and visualization analysis for molecular data. It integrates a chatbot, allowing users to interact with and analyze prediction results through natural language.
 
-## Key Features
-Deployed version(web app): https://bohrium.dp.tech/apps/tox-agents
+Deployed version (web app): https://bohrium.dp.tech/apps/tox-agents
+
 ## Key Features
 
 1.  **XYZ to NPZ File Conversion**:
@@ -22,11 +22,13 @@ Deployed version(web app): https://bohrium.dp.tech/apps/tox-agents
     *   Supports selecting and viewing different frames in a molecular trajectory.
     *   The current view can be exported as a PNG or JPG image.
 
-4.  **Chatbot Integration**:
+4.  **Chatbot Integration & RAG Enhancement**:
     *   Features a built-in chatbot interface for user interaction.
-    *   Supports various large language models (configurable via API).
-    *   **Analysis Function**: Users can send prediction results (image and data) of a specific frame to the chatbot for in-depth analysis. The bot generates a detailed chemical and biological analysis report based on the provided molecular data (toxicity probability, other properties).
-    *   Supports multimodal input (text and images).
+    *   The chatbot can be configured to use a backend RAG (Retrieval-Augmented Generation) service (`lightrag_pdf_processor.py`) which leverages a knowledge base built from PDF documents.
+    *   This RAG service (mimicking an OpenAI API) enhances queries with information extracted from the PDF knowledge base before sending them to a configured Large Language Model.
+    *   Supports various large language models (configurable via the RAG service or directly if RAG is not used).
+    *   **Analysis Function**: Users can send prediction results (image and data) of a specific frame to the chatbot for in-depth analysis.
+    *   Supports multimodal input (text and images) if the underlying LLM and RAG setup supports it.
 
 5.  **Nano Reactor**:
     *   A dedicated module for processing and analyzing molecular reaction simulation data.
@@ -40,78 +42,104 @@ Deployed version(web app): https://bohrium.dp.tech/apps/tox-agents
 
 ### 1. Environment Setup
 
-*   Ensure you have a Python environment installed.
-*   Install the required dependencies, primarily `gradio`, `openai`, `numpy`, `pandas`, `Pillow`. (Refer to the `import` statements in the code for a complete list).
-
-### 2. Launching the Application
-
-*   Run the main program script from the project root directory:
+*   **Python**: Ensure you have a Python environment installed (e.g., Python 3.9+).
+*   **Core Dependencies**:
     ```bash
-    python toxpre.py
+    pip install gradio openai numpy pandas Pillow textract fastapi "uvicorn[standard]" python-multipart httpx reportlab plotly
     ```
-*   The application will start a local web server (the address and port, e.g., `http://0.0.0.0:50007`, will typically be displayed in the console).
-*   Open this address in your web browser to access the application interface.
+    *(Note: `httpx` is added for `chatbot.py` to call the RAG service, `reportlab` is optional for dummy PDF generation in the RAG service, `plotly` is used by `extract_module.py` and `fragment_module.py`)*
+
+*   **UniMol Tools (`unimol_tools`)**: This is crucial for molecular predictions.
+    *   **PyTorch**: Install PyTorch according to your environment (CPU or CUDA). More details: [PyTorch Get Started](https://pytorch.org/get-started/locally/)
+    *   **RDKit**: `unimol_tools` currently requires `numpy<2.0.0`. Install RDKit (which includes a compatible NumPy version):
+        ```bash
+        pip install rdkit
+        # Or, if you need a specific numpy version first:
+        # pip install "numpy<2.0.0"
+        # pip install rdkit
+        ```
+    *   **Install `unimol_tools`**:
+        *   **Option 1: From PyPI (Recommended)**
+            ```bash
+            pip install unimol_tools --upgrade
+            pip install huggingface_hub  # Recommended for automatic model downloads
+            ```
+            You can set `export HF_ENDPOINT=https://hf-mirror.com` if Hugging Face Hub downloads are slow.
+        *   **Option 2: From Source (for latest version)**
+            ```bash
+            # Ensure dependencies like Cython, etc., are met as per Uni-Mol's requirements.txt
+            # pip install -r requirements.txt # (from Uni-Mol repo if needed)
+            git clone https://github.com/deepmodeling/Uni-Mol.git
+            cd Uni-Mol/unimol_tools
+            python setup.py install
+            cd ../.. # Return to project root
+            ```
+    *   **Uni-Mol Model Weights**:
+        *   Models can be automatically downloaded via `huggingface_hub` if installed.
+        *   Alternatively, set the `UNIMOL_WEIGHT_DIR` environment variable if you have downloaded weights manually:
+            ```bash
+            export UNIMOL_WEIGHT_DIR=/path/to/your/unimol_weights_dir/
+            ```
+
+*   **LightRAG (for PDF RAG service)**:
+    ```bash
+    pip install "lightrag-hku[openai]" # Or other extras depending on your LLM/embedding choice for LightRAG
+    ```
+
+### 2. Launching the Applications
+
+This project now potentially involves two services: the main ToxPred application and the LightRAG PDF service.
+
+*   **A. Launch the LightRAG PDF Service (Optional, for RAG-enhanced chat)**:
+    1.  Navigate to the project root directory (`f:/develop/toxchat/toxchat`).
+    2.  Ensure your PDF documents are placed in the directory specified by `PDF_INPUT_DIRECTORY` in `src/lightrag_pdf_processor.py` (default: `./sample_pdfs`).
+    3.  If the LightRAG service's internal LLM (e.g., OpenAI) requires an API key, set the `OPENAI_API_KEY` environment variable.
+    4.  Run the service:
+        ```bash
+        python src/lightrag_pdf_processor.py
+        ```
+        This service will typically run on `http://0.0.0.0:8001`.
+
+*   **B. Launch the Main ToxPred Application (`toxpre.py`)**:
+    1.  Navigate to the project root directory.
+    2.  Run the main program script:
+        ```bash
+        python src/toxpre.py
+        ```
+    3.  The application will start a local web server (e.g., `http://0.0.0.0:50007`).
+    4.  Open this address in your web browser.
 
 ### 3. Interface Operation
 
-The application interface consists of several main tabs:
-
-*   **XYZ to NPZ Converter**:
-    1.  Click "Upload XYZ file" to upload your `.xyz` file.
-    2.  Click the "Convert to NPZ" button.
-    3.  Once conversion is complete, status information will be displayed, and the generated `.npz` file will be available for download.
-
-*   **Toxicity Prediction & Visualization**:
-    1.  **API Configuration (Optional but Recommended)**:
-        *   Expand the "API Configuration" section.
-        *   Enter your API Base URL and API Key.
-        *   Select a model or enter a custom model identifier.
-        *   Click "Configure API". This is required for the chatbot functionality.
-    2.  **Prediction & Visualization**:
-        *   In the "Left Column - Toxicity Prediction" section:
-            *   Click "Upload NPZ file" to upload the previously converted or an existing `.npz` file. Prediction will start automatically upon upload.
-            *   Modify the model paths and reference file path in the "Property Prediction" and "Binary Prediction" sections as needed.
-            *   Prediction result files (Property Predictions, Binary Predictions) and logs will be displayed.
-            *   The "Probability Analysis" plot will show the probability distribution for binary predictions.
-        *   Click "Convert to XYZ" to convert the uploaded NPZ file to XYZ format and display the molecular structure in the "Structure View" on the right.
-        *   In the "Right Column - Visualization" section:
-            *   Use the sliders and dropdowns in "Visualization Controls" to adjust the molecule display:
-                *   `Select Frame`: Choose different frames from the molecular trajectory.
-                *   `Representation Style`: Change the display style of the molecule.
-                *   `X/Y/Z Rotation`, `Zoom`: Adjust the viewpoint.
-            *   Click the "Export" button to export the current frame's image and corresponding prediction data (binary and property predictions). The exported image file and a JSON file containing the data will be provided for download.
-            *   Click the "Analysis" button to send the currently exported image and data to the chatbot for analysis.
-    3.  **Chat Interaction**:
-        *   In the chat interface at the top, type your questions or commands.
-        *   If "Enable Image Input" is checked and an image is uploaded, it will be sent with the message.
-        *   Click "Send" or press Enter to send the message.
-        *   The chat history will be displayed above.
-
-*   **Nano Reactor**:
-    1.  Enter a "Job ID".
-    2.  Upload the `parameters3.dat` file and relevant job files ("Select files for Job ID").
-    3.  Click "Upload Files".
-    4.  Click "Run Extra" to perform additional data extraction and plotting. Result logs, plots, and download links will be displayed.
-    5.  Click "Analyze Fragments" to analyze molecular fragments. Analysis output and a timeline plot will be shown.
-    6.  Enter the timesteps for fragment coordinate extraction in "Select Timestep" (single, comma-separated multiple, or 'all').
-    7.  Click "Extract Fragment Coordinates". Extraction status and fragment file download links will be displayed.
+*   **XYZ to NPZ Converter**: (As previously described)
+*   **Toxicity Prediction & Visualization**: (As previously described)
+    *   **API Configuration for Chatbot**:
+        *   If using the LightRAG PDF service:
+            *   Set "Base URL" to the LightRAG service address (e.g., `http://localhost:8001`).
+            *   "API Key" can be a dummy value (e.g., "rag_service_key") as the RAG service currently doesn't validate it from `chatbot.py`.
+            *   The "Model" selected here will be passed in the request but the RAG service will use its internally configured LLM.
+        *   If NOT using the LightRAG service (direct LLM call):
+            *   Set "Base URL" and "API Key" for your chosen LLM provider.
+*   **Nano Reactor**: (As previously described)
 
 ## File Structure (Main Scripts)
 
-*   `toxpre.py`: The main entry point for the Gradio interface, integrating various functional modules.
-*   `interface.py`: Defines core functions for conversion, prediction, visualization, and export, as well as some Gradio UI element handling logic.
-*   `chatbot.py`: Implements the core logic for the chatbot, including interaction with large language model APIs, message memory management, and construction of the Gradio chat interface.
-*   `predictor.py`: Contains the `BinaryPredictor` class for performing binary toxicity predictions.
-*   `MoleculePredictor.py`: Contains the `MoleculePredictor` class for performing molecular property predictions.
-*   `file_converter.py`: Contains functions for reading and writing XYZ and NPZ files.
-*   `converter.py`: Contains the `NPZToXYZ` class for converting NPZ files back to XYZ format.
-*   `visualizer.py`: Uses PyMol (via command-line calls or as a library) for molecular visualization and image export.
-*   `probability_plot.py`: Creates the toxicity probability analysis plot.
-*   `reactor.py`: Contains functions related to the Nano Reactor module.
+*   `src/toxpre.py`: Main Gradio UI for ToxPred.
+*   `src/interface.py`: Core backend logic for ToxPred features.
+*   `src/chatbot.py`: Chatbot logic, now capable of querying the LightRAG service or a direct LLM.
+*   `src/lightrag_pdf_processor.py`: FastAPI service for RAG using PDF documents, mimicking an OpenAI API.
+*   `src/predictor.py`: `BinaryPredictor` for toxicity.
+*   `src/MoleculePredictor.py`: `MoleculePredictor` for properties.
+*   (Other utility and module scripts as previously listed)
 
 ## Important Notes
 
-*   **Model Paths**: The code contains some hardcoded model paths (e.g., `/mnt/backup2/ai4s/...`). You will need to modify these paths according to your environment to point to the correct model files or directories.
-*   **API Keys**: The chatbot functionality relies on external large language model APIs. Ensure you have correctly configured the Base URL and a valid API Key in the "API Configuration" section.
-*   **Dependencies**: Make sure all Python dependencies are correctly installed.
-*   **PyMol**: The molecular visualization feature may depend on PyMol being installed and configured.
+*   **Model Paths**:
+    *   For `toxpre.py` predictions: The code contains some hardcoded model paths (e.g., `/mnt/backup2/ai4s/...`). Modify these in the Gradio UI or code to point to your actual Uni-Mol model directories.
+    *   For `unimol_tools`: Ensure models are downloadable via `huggingface_hub` or `UNIMOL_WEIGHT_DIR` is set.
+*   **API Keys**:
+    *   If `chatbot.py` is configured to call an LLM API directly (not through the RAG service), ensure the Base URL and API Key are correctly set in the Gradio UI.
+    *   If the LightRAG service (`src/lightrag_pdf_processor.py`) uses an LLM that requires an API key (e.g., OpenAI for its internal `llm_model_func`), ensure the `OPENAI_API_KEY` (or equivalent for other providers) environment variable is set when running the RAG service.
+*   **Dependencies**: This project has several key dependencies. Pay close attention to the "Environment Setup" section, especially for PyTorch, RDKit (with `numpy<2.0.0`), `unimol_tools`, and `lightrag-hku`.
+*   **PyMol**: Molecular visualization in `visualizer.py` might depend on PyMol installation and configuration.
+*   **`textract` Dependencies**: `textract` (used by the RAG service) may require system-level packages like `pdftotext` to process PDFs. Check `textract` documentation for OS-specific requirements.
