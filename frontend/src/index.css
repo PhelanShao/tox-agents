@@ -1,0 +1,640 @@
+/* Global Styles & CSS Variables */
+:root {
+  /* Color Palette */
+  --primary-color: #0D5C63; /* Dark Teal */
+  --primary-color-rgb: 13, 92, 99; /* RGB for Dark Teal */
+  --primary-hover-color: #0A484E; /* Darker Teal */
+  --secondary-color: #5A6268; /* Medium Gray */
+  --accent-color: #28A745;   /* Green - for accents, success */
+  --background-color: #f4f6f8; /* Softer Light Gray - page background */
+  --surface-color: #ffffff;    /* White - for cards, content areas */
+  --text-color: #343a40;       /* Darker Gray - main text */
+  --text-muted-color: #6c757d; /* Lighter gray - secondary text */
+  --border-color: #ced4da;     /* Softer gray - borders */
+  --success-color: #28a745;    /* Green - success messages */
+  --error-color: #dc3545;      /* Red - error messages */
+  --info-color: #17a2b8;       /* Teal - info messages (can be reviewed if it clashes with new primary) */
+
+  /* Typography */
+  --font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --base-font-size: 16px;
+  --h1-font-size: 2.25rem; /* 36px */
+  --h2-font-size: 1.875rem; /* 30px */
+  --h3-font-size: 1.5rem;  /* 24px */
+  --h4-font-size: 1.25rem; /* 20px */
+
+  /* Spacing */
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem;  /* 8px */
+  --spacing-md: 1rem;    /* 16px */
+  --spacing-lg: 1.5rem;  /* 24px */
+  --spacing-xl: 2rem;    /* 32px */
+
+  /* Borders */
+  --border-radius: 0.375rem; /* 6px */
+  --border-width: 1px;
+
+  /* Transitions */
+  --transition-base: all 0.2s ease-in-out;
+}
+
+/* Basic Reset & Body Styles */
+body {
+  margin: 0;
+  font-family: var(--font-family-sans-serif);
+  font-size: var(--base-font-size);
+  line-height: 1.6;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* App Container */
+.App {
+  max-width: 1280px; /* Slightly reduced max-width for better focus */
+  margin: 0 auto;
+  padding: var(--spacing-lg); /* Increased base padding for more breathing room */
+}
+
+/* Headings */
+h1, h2, h3, h4 {
+  margin-top: 0;
+  margin-bottom: var(--spacing-md);
+  font-weight: 500;
+  line-height: 1.2;
+}
+h1 { font-size: var(--h1-font-size); }
+h2 { font-size: var(--h2-font-size); margin-top: var(--spacing-xl); }
+h3 { font-size: var(--h3-font-size); margin-top: var(--spacing-lg); }
+h4 { font-size: var(--h4-font-size); margin-top: var(--spacing-md); }
+
+p {
+  margin-top: 0;
+  margin-bottom: var(--spacing-md);
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: var(--transition-base);
+}
+a:hover {
+  color: var(--primary-hover-color);
+  text-decoration: underline;
+}
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  border-bottom: 2px solid var(--border-color); /* Slightly thicker border */
+  margin-bottom: var(--spacing-lg);
+  /* Removed background color from tab-nav for a cleaner look, relying on page/content background */
+  /* border-radius: var(--border-radius) var(--border-radius) 0 0; */ /* Removed top radius */
+  /* padding: var(--spacing-sm) var(--spacing-sm) 0 var(--spacing-sm); */ /* Adjusted padding */
+  /* box-shadow: 0 2px 4px rgba(0,0,0,0.05); */ /* Removed shadow for a flatter design */
+}
+
+.tab-nav button {
+  padding: var(--spacing-md) var(--spacing-lg); /* Keep padding for click area */
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+  font-size: var(--base-font-size);
+  font-weight: 500;
+  color: var(--text-muted-color);
+  border-bottom: 3px solid transparent; /* Active state border */
+  transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out; /* Specific transitions */
+  margin-right: var(--spacing-md); /* Increased spacing between tab buttons */
+  border-top-left-radius: var(--border-radius); /* Add subtle rounding to top of tabs */
+  border-top-right-radius: var(--border-radius);
+}
+
+.tab-nav button:hover {
+  color: var(--primary-hover-color); /* Use hover color */
+  background-color: #e9ecef; /* Light hover background for tabs */
+}
+
+.tab-nav button.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  font-weight: 600; /* Make active tab text slightly bolder */
+}
+
+/* Tab Content Area */
+.tab-content {
+  padding: var(--spacing-lg);
+  background-color: var(--surface-color);
+  border: var(--border-width) solid var(--border-color);
+  border-top: none; /* Keep this if tab-nav has bottom border */
+  box-shadow: 0 3px 6px rgba(0,0,0,0.07); /* Slightly enhanced shadow */
+  border-radius: 0 0 var(--border-radius) var(--border-radius); /* Keep bottom radius */
+}
+
+/* Form Elements Styling */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="file"],
+select,
+textarea {
+  display: block;
+  width: calc(100% - (var(--spacing-sm) * 2)); /* Full width minus padding */
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--base-font-size);
+  font-family: var(--font-family-sans-serif);
+  color: var(--text-color);
+  background-color: var(--surface-color);
+  background-clip: padding-box;
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius);
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  margin-bottom: var(--spacing-md);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05) inset; /* Subtle inner shadow */
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="file"]:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary-color);
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25); /* Use RGB version of primary color for box-shadow */
+}
+
+input[type="file"] {
+  padding: var(--spacing-xs);
+}
+input[type="file"]::file-selector-button {
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-right: var(--spacing-md);
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out; /* More specific transition */
+}
+input[type="file"]::file-selector-button:hover {
+  background-color: var(--primary-hover-color);
+  /* Consider adding a subtle box-shadow on hover for the button */
+}
+
+
+button {
+  display: inline-block;
+  font-weight: 400;
+  color: white;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  background-color: var(--primary-color);
+  border: var(--border-width) solid var(--primary-color);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--base-font-size);
+  border-radius: var(--border-radius);
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; /* Refined transition */
+  margin-right: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Subtle shadow for buttons */
+}
+
+button:hover {
+  background-color: var(--primary-hover-color);
+  border-color: var(--primary-hover-color);
+  text-decoration: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Slightly enhance shadow on hover */
+}
+
+button:focus {
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.5); /* Use RGB version of primary color */
+}
+
+button:disabled {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Secondary button style */
+button.secondary {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: white;
+}
+button.secondary:hover {
+    background-color: #545b62; /* Darken secondary */
+    border-color: #545b62;
+}
+
+
+/* Message Styling */
+.message {
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--border-radius);
+}
+.message.success {
+  color: #0f5132;
+  background-color: #d1e7dd;
+  border-color: #badbcc;
+}
+.message.error {
+  color: #842029;
+  background-color: #f8d7da;
+  border-color: #f5c2c7;
+}
+.message.info {
+  color: #055160;
+  background-color: #cff4fc;
+  border-color: #b6effb;
+}
+
+
+/* Loading Spinner */
+.loader {
+  border: 4px solid #f3f3f3; /* Light grey */
+  border-top: 4px solid var(--primary-color); /* Use new primary color */
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 0.8s linear infinite; /* Slightly faster spin */
+  margin: var(--spacing-lg) auto; /* Increased margin for loader */
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Utility Classes */
+.mt-1 { margin-top: var(--spacing-sm); }
+.mt-2 { margin-top: var(--spacing-md); }
+.mt-3 { margin-top: var(--spacing-lg); }
+.mb-1 { margin-bottom: var(--spacing-sm); }
+.mb-2 { margin-bottom: var(--spacing-md); }
+.mb-3 { margin-bottom: var(--spacing-lg); }
+
+/* Specific component sections */
+.component-section {
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg); /* Keep spacing between sections */
+  background-color: var(--surface-color);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius); /* Keep current border radius */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Slightly enhanced shadow for sections */
+}
+.component-section h3 {
+    margin-top: 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    color: var(--primary-color); /* Use primary color for section titles */
+}
+
+/* For two-column layouts */
+.layout-columns {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: var(--spacing-lg);
+}
+.layout-column {
+    flex: 1;
+    min-width: 300px; /* Prevent columns from becoming too narrow */
+}
+
+label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+}
+
+pre {
+  background-color: #e0e4e8; /* Slightly darker background for pre */
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word; /* Changed from break-all to break-word for better readability */
+  border: 1px solid #c8cdd2; /* Slightly darker border for pre */
+    font-family: var(--font-family-monospace);
+    font-size: 0.9em;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05) inset; /* Subtle inner shadow for pre */
+}
+
+details {
+    background-color: var(--surface-color); /* Keep surface color */
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md); /* Increased padding */
+    margin-bottom: var(--spacing-md);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03); /* Subtle shadow for details */
+}
+
+details summary {
+    font-weight: 600; /* Slightly bolder summary */
+    cursor: pointer;
+    padding: var(--spacing-sm) 0; /* Adjust padding */
+    color: var(--primary-color); /* Use primary color for summary text */
+}
+details summary:hover {
+    color: var(--primary-hover-color);
+}
+
+details div { /* Content within details */
+    padding-top: var(--spacing-md); /* Increased padding for content */
+}
+
+/* FileUpload.jsx specific styles */
+.file-upload-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md); /* Increased gap */
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap; /* Allow wrapping if space is tight */
+}
+
+.file-upload-label .button { /* Style the span acting as a button */
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--primary-color); /* Ensure it uses primary button color */
+  color: white;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition-base);
+  display: inline-block; /* Make it behave like a button */
+}
+.file-upload-label .button:hover {
+  background-color: var(--primary-hover-color);
+}
+
+.file-name-display {
+  font-size: 0.9em;
+  color: var(--text-muted-color);
+  background-color: #e9ecef;
+  padding: var(--spacing-sm) var(--spacing-md); /* Adjusted padding */
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px; /* Prevent it from being too long */
+}
+
+/* Loader for buttons (smaller) */
+.loader-button {
+  display: inline-block;
+  border: 2px solid rgba(255,255,255,0.5);
+  border-top: 2px solid #fff;
+  border-radius: 50%;
+  width: 1em; /* Relative to button font size */
+  height: 1em;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: var(--spacing-sm);
+}
+.loader-button-small { /* Even smaller for compact buttons */
+  display: inline-block;
+  border: 2px solid rgba(255,255,255,0.5);
+  border-top: 2px solid #fff;
+  border-radius: 50%;
+  width: 0.8em; 
+  height: 0.8em;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+}
+
+
+/* ChatInterface.jsx specific styles */
+.chat-history-container {
+  height: 400px; /* Increased height */
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  background-color: var(--background-color); /* Use page background color for contrast */
+  border-radius: var(--border-radius);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05) inset; /* Subtle inner shadow */
+}
+
+.chat-empty-message {
+  text-align: center;
+  color: var(--text-muted-color);
+  padding-top: var(--spacing-xl);
+  font-style: italic; /* Italicize empty message */
+}
+
+.chat-message {
+  display: flex;
+  margin-bottom: var(--spacing-md);
+  animation: fadeIn 0.3s ease-out; /* Add subtle fade-in for new messages */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+.chat-message.user {
+  justify-content: flex-end;
+}
+
+.chat-message.assistant {
+  justify-content: flex-start;
+}
+
+.chat-bubble {
+  padding: var(--spacing-md); /* Increased padding for bubbles */
+  border-radius: calc(var(--border-radius) + var(--spacing-xs)); /* Slightly larger border radius */
+  max-width: 75%; /* Slightly reduced max-width */
+  word-wrap: break-word;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Slightly softer shadow */
+  line-height: 1.5; /* Improved line height within bubbles */
+}
+
+.chat-message.user .chat-bubble {
+  background-color: var(--primary-color);
+  color: white;
+  /* More distinct bubble shape for user */
+  border-top-left-radius: calc(var(--border-radius) + var(--spacing-xs));
+  border-top-right-radius: calc(var(--border-radius) + var(--spacing-xs));
+  border-bottom-left-radius: calc(var(--border-radius) + var(--spacing-xs));
+  border-bottom-right-radius: var(--spacing-xs);
+}
+
+.chat-message.assistant .chat-bubble {
+  background-color: var(--surface-color); /* Use surface color for assistant bubbles */
+  color: var(--text-color);
+  border: 1px solid var(--border-color); /* Add a light border to assistant bubbles */
+  /* More distinct bubble shape for assistant */
+  border-top-left-radius: calc(var(--border-radius) + var(--spacing-xs));
+  border-top-right-radius: calc(var(--border-radius) + var(--spacing-xs));
+  border-bottom-right-radius: calc(var(--border-radius) + var(--spacing-xs));
+  border-bottom-left-radius: var(--spacing-xs);
+}
+
+.chat-input-area {
+  display: flex;
+  flex-direction: column; /* Stack textarea and actions */
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.chat-input-area textarea {
+  width: 100%; /* Take full width of its container */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+  resize: vertical;
+  resize: vertical;
+  min-height: 70px; /* Slightly taller text area */
+  font-size: 1.05em; /* Slightly larger font in text area */
+}
+
+.chat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-md); /* Increased gap for chat actions */
+}
+
+.chat-image-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  font-size: 0.9em;
+}
+.chat-image-toggle input[type="checkbox"] {
+    width: auto; /* Override global input style for checkbox */
+    margin-right: var(--spacing-xs);
+}
+
+/* Ensure FileUpload within chat actions is compact */
+.chat-actions .file-upload-container {
+    margin-bottom: 0; /* Remove default bottom margin from FileUpload */
+}
+.chat-actions .file-upload-label .button {
+    padding: var(--spacing-xs) var(--spacing-sm); /* Make button smaller */
+    font-size: 0.9em;
+}
+.chat-actions .file-name-display {
+    font-size: 0.8em;
+    padding: var(--spacing-xs);
+    max-width: 150px; /* Shorter display for filename in chat */
+}
+
+/* Responsive Design Adjustments */
+@media (max-width: 992px) { /* Medium devices (tablets, less than 992px) */
+  .App {
+    padding: var(--spacing-md); /* Reduce app padding */
+  }
+
+  .layout-columns {
+    gap: var(--spacing-md); /* Reduce gap between columns */
+  }
+
+  .chat-history-container {
+    height: 350px; /* Slightly reduce chat history height */
+  }
+}
+
+@media (max-width: 768px) { /* Small devices (landscape phones, less than 768px) */
+  :root {
+    --h1-font-size: 2rem;   /* 32px */
+    --h2-font-size: 1.75rem;/* 28px */
+    --h3-font-size: 1.375rem;/* 22px */
+    --h4-font-size: 1.125rem;/* 18px */
+    --base-font-size: 15px;
+  }
+
+  .App {
+    padding: var(--spacing-sm);
+  }
+
+  .tab-nav {
+    flex-direction: column; /* Stack tab buttons vertically */
+    align-items: stretch;
+  }
+  .tab-nav button {
+    margin-right: 0;
+    margin-bottom: var(--spacing-xs); /* Add small margin between stacked buttons */
+    border-bottom-width: 2px; /* Make bottom border thinner for stacked tabs */
+  }
+  .tab-nav button.active {
+    border-bottom-width: 3px; /* Keep active border distinct */
+  }
+
+
+  .component-section {
+    padding: var(--spacing-md);
+  }
+
+  .layout-column {
+    min-width: 100%; /* Ensure columns stack and take full width */
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="number"],
+  input[type="file"],
+  select,
+  textarea {
+    font-size: var(--base-font-size); /* Ensure form elements scale with base font */
+  }
+
+  button {
+    font-size: var(--base-font-size);
+    padding: var(--spacing-sm) var(--spacing-md); /* Adjust button padding */
+  }
+
+  .chat-bubble {
+    max-width: 90%; /* Increase max-width for bubbles on smaller screens */
+    padding: var(--spacing-sm) var(--spacing-xs);
+  }
+
+  .chat-history-container {
+    height: 300px;
+  }
+
+  .chat-input-area textarea {
+    min-height: 60px;
+    font-size: 1em;
+  }
+
+  .chat-actions .file-upload-label .button,
+  .chat-actions .file-name-display {
+    font-size: 0.75em; /* Further reduce font size for chat file upload elements */
+  }
+}
+
+@media (max-width: 576px) { /* Extra small devices (portrait phones, less than 576px) */
+  :root {
+    --h1-font-size: 1.75rem; /* 28px */
+    --h2-font-size: 1.5rem;  /* 24px */
+    --h3-font-size: 1.25rem; /* 20px */
+    --base-font-size: 14px;
+  }
+
+  .tab-content {
+    padding: var(--spacing-md);
+  }
+
+  /* Further reduce padding for the smallest screens */
+  .chat-bubble {
+    padding: var(--spacing-xs);
+  }
+
+  .chat-actions {
+    gap: var(--spacing-xs); /* Reduce gap in chat actions further */
+  }
+  .chat-actions button { /* Make buttons in chat actions smaller */
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+}
