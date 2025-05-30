@@ -1,149 +1,107 @@
-# ToxPred: Molecular Toxicity Prediction and Analysis Platform
+# ToxPred React Interface
 
-ToxPred is an interactive web application built with Gradio, designed to provide toxicity prediction, property prediction, and visualization analysis for molecular data. It integrates a chatbot, allowing users to interact with and analyze prediction results through natural language.
+## Overview
 
-Deployed version -tox agents (web app): https://bohrium.dp.tech/apps/tox-agents
+This version of the ToxPred application uses a modern React frontend with a Python FastAPI backend. It provides functionalities for toxicity prediction, molecule visualization, file conversion, and an AI chat interface for analysis.
 
-Molreac (Nano reactor app): https://bohrium.dp.tech/apps/molreac
+## Prerequisites
 
+*   **Node.js and npm:** Required for frontend development or if you need to rebuild the frontend. You can download them from [https://nodejs.org/](https://nodejs.org/).
+*   **Python:** Version 3.7+ is recommended. You can download Python from [https://www.python.org/](https://www.python.org/).
 
+## Backend Setup
 
-## Key Features
-
-1.  **XYZ to NPZ File Conversion**:
-    *   Users can upload molecular structure files in `.xyz` format.
-    *   The application converts them to `.npz` format, which is required for subsequent prediction and analysis steps.
-
-2.  **Toxicity and Property Prediction**:
-    *   **Property Prediction**: After uploading an `.npz` file, various physicochemical properties of the molecule can be predicted. Requires specifying model directory path and reference NPZ file path.
-    *   **Binary Toxicity Prediction**: Predicts whether a molecule is toxic (binary classification). Requires specifying the model directory path.
-    *   Prediction results (probability and class) are provided as a CSV file, and a probability analysis plot is displayed.
-
-3.  **Molecular Visualization**:
-    *   `.npz` files can be converted back to `.xyz` format for visualization.
-    *   Offers multiple molecular representation styles (e.g., sticks, ball_and_stick, spacefill).
-    *   Users can interactively rotate, zoom, and pan the molecular structure.
-    *   Supports selecting and viewing different frames in a molecular trajectory.
-    *   The current view can be exported as a PNG or JPG image.
-
-4.  **Chatbot Integration & RAG Enhancement**:
-    *   Features a built-in chatbot interface for user interaction.
-    *   The chatbot can be configured to use a backend RAG (Retrieval-Augmented Generation) service (`lightrag_pdf_processor.py`) which leverages a knowledge base built from PDF documents.
-    *   This RAG service (mimicking an OpenAI API) enhances queries with information extracted from the PDF knowledge base before sending them to a configured Large Language Model.
-    *   Supports various large language models (configurable via the RAG service or directly if RAG is not used).
-    *   **Analysis Function**: Users can send prediction results (image and data) of a specific frame to the chatbot for in-depth analysis.
-    *   Supports multimodal input (text and images) if the underlying LLM and RAG setup supports it.
-
-5.  **Nano Reactor**:
-    *   A dedicated module for processing and analyzing molecular reaction simulation data.
-    *   **File Upload**: Users can upload a `parameters3.dat` file and associated job files for a specific Job ID.
-    *   **Run Analysis**:
-        *   `Run Extra`: Executes an additional module for data extraction and plotting.
-        *   `Analyze Fragments`: Analyzes molecular fragments during the reaction process and generates a timeline plot.
-    *   **Fragment Extraction**: Users can select specific timesteps (or all timesteps) to extract coordinate data for reaction fragments.
-
-## How to Use
-
-### 1. Environment Setup
-
-*   **Python**: Ensure you have a Python environment installed (e.g., Python 3.9+).
-*   **Core Dependencies**:
+1.  **Create a Virtual Environment (Recommended):**
     ```bash
-    pip install gradio openai numpy pandas Pillow textract fastapi "uvicorn[standard]" python-multipart httpx reportlab plotly
-    ```
-    *(Note: `httpx` is added for `chatbot.py` to call the RAG service, `reportlab` is optional for dummy PDF generation in the RAG service, `plotly` is used by `extract_module.py` and `fragment_module.py`)*
-
-*   **UniMol Tools (`unimol_tools`)**: This is crucial for molecular predictions.
-    *   **PyTorch**: Install PyTorch according to your environment (CPU or CUDA). More details: [PyTorch Get Started](https://pytorch.org/get-started/locally/)
-    *   **RDKit**: `unimol_tools` currently requires `numpy<2.0.0`. Install RDKit (which includes a compatible NumPy version):
-        ```bash
-        pip install rdkit
-        # Or, if you need a specific numpy version first:
-        # pip install "numpy<2.0.0"
-        # pip install rdkit
-        ```
-    *   **Install `unimol_tools`**:
-        *   **Option 1: From PyPI (Recommended)**
-            ```bash
-            pip install unimol_tools --upgrade
-            pip install huggingface_hub  # Recommended for automatic model downloads
-            ```
-            You can set `export HF_ENDPOINT=https://hf-mirror.com` if Hugging Face Hub downloads are slow.
-        *   **Option 2: From Source (for latest version)**
-            ```bash
-            # Ensure dependencies like Cython, etc., are met as per Uni-Mol's requirements.txt
-            # pip install -r requirements.txt # (from Uni-Mol repo if needed)
-            git clone https://github.com/deepmodeling/Uni-Mol.git
-            cd Uni-Mol/unimol_tools
-            python setup.py install
-            cd ../.. # Return to project root
-            ```
-    *   **Uni-Mol Model Weights**:
-        *   Models can be automatically downloaded via `huggingface_hub` if installed.
-        *   Alternatively, set the `UNIMOL_WEIGHT_DIR` environment variable if you have downloaded weights manually:
-            ```bash
-            export UNIMOL_WEIGHT_DIR=/path/to/your/unimol_weights_dir/
-            ```
-
-*   **LightRAG (for PDF RAG service)**:
-    ```bash
-    pip install "lightrag-hku[openai]" # Or other extras depending on your LLM/embedding choice for LightRAG
+    python -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
     ```
 
-### 2. Launching the Applications
+2.  **Install Dependencies:**
+    The `requirements.txt` file includes the core dependencies for running the backend server and basic functionalities.
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-This project now potentially involves two services: the main ToxPred application and the LightRAG PDF service.
+## Frontend Setup
 
-*   **A. Launch the LightRAG PDF Service (Optional, for RAG-enhanced chat)**:
-    1.  Navigate to the project root directory (`f:/develop/toxchat/toxchat`).
-    2.  Ensure your PDF documents are placed in the directory specified by `PDF_INPUT_DIRECTORY` in `src/lightrag_pdf_processor.py` (default: `./sample_pdfs`).
-    3.  If the LightRAG service's internal LLM (e.g., OpenAI) requires an API key, set the `OPENAI_API_KEY` environment variable.
-    4.  Run the service:
-        ```bash
-        python src/lightrag_pdf_processor.py
-        ```
-        This service will typically run on `http://0.0.0.0:8001`.
+The frontend is pre-built and located in the `frontend/dist/` directory. The FastAPI backend is configured to serve these static files.
 
-*   **B. Launch the Main ToxPred Application (`toxpre.py`)**:
-    1.  Navigate to the project root directory.
-    2.  Run the main program script:
-        ```bash
-        python src/toxpre.py
-        ```
-    3.  The application will start a local web server (e.g., `http://0.0.0.0:50007`).
-    4.  Open this address in your web browser.
+**For Developers (Modifying or Rebuilding the Frontend):**
 
-### 3. Interface Operation
+1.  Navigate to the frontend directory:
+    ```bash
+    cd frontend
+    ```
 
-*   **XYZ to NPZ Converter**: (As previously described)
-*   **Toxicity Prediction & Visualization**: (As previously described)
-    *   **API Configuration for Chatbot**:
-        *   If using the LightRAG PDF service:
-            *   Set "Base URL" to the LightRAG service address (e.g., `http://localhost:8001`).
-            *   "API Key" can be a dummy value (e.g., "rag_service_key") as the RAG service currently doesn't validate it from `chatbot.py`.
-            *   The "Model" selected here will be passed in the request but the RAG service will use its internally configured LLM.
-        *   If NOT using the LightRAG service (direct LLM call):
-            *   Set "Base URL" and "API Key" for your chosen LLM provider.
-*   **Nano Reactor**: (As previously described)
+2.  Install npm dependencies:
+    ```bash
+    npm install
+    ```
+    If you encounter peer dependency issues, you might need to use:
+    ```bash
+    npm install --legacy-peer-deps
+    ```
 
-## File Structure (Main Scripts)
+3.  Build the frontend for production:
+    ```bash
+    npm run build
+    ```
+    This will regenerate the files in the `frontend/dist/` directory.
 
-*   `src/toxpre.py`: Main Gradio UI for ToxPred.
-*   `src/interface.py`: Core backend logic for ToxPred features.
-*   `src/chatbot.py`: Chatbot logic, now capable of querying the LightRAG service or a direct LLM.
-*   `src/lightrag_pdf_processor.py`: FastAPI service for RAG using PDF documents, mimicking an OpenAI API.
-*   `src/predictor.py`: `BinaryPredictor` for toxicity.
-*   `src/MoleculePredictor.py`: `MoleculePredictor` for properties.
-*   (Other utility and module scripts as previously listed)
+## Running the Application
 
-## Important Notes
+1.  **Start the FastAPI Backend:**
+    Navigate to the project's root directory (where the `src/` folder is located).
+    Run the API server:
+    ```bash
+    python src/api.py
+    ```
+    For development with auto-reload, you can use Uvicorn directly from the project root:
+    ```bash
+    python -m uvicorn src.api:app --reload --host 0.0.0.0 --port 8000
+    ```
+    The backend server will typically start on `http://localhost:8000`.
 
-*   **Model Paths**:
-    *   For `toxpre.py` predictions: The code contains some hardcoded model paths (e.g., `/mnt/backup2/ai4s/...`). Modify these in the Gradio UI or code to point to your actual Uni-Mol model directories.
-    *   For `unimol_tools`: Ensure models are downloadable via `huggingface_hub` or `UNIMOL_WEIGHT_DIR` is set.
-*   **API Keys**:
-    *   If `chatbot.py` is configured to call an LLM API directly (not through the RAG service), ensure the Base URL and API Key are correctly set in the Gradio UI.
-    *   If the LightRAG service (`src/lightrag_pdf_processor.py`) uses an LLM that requires an API key (e.g., OpenAI for its internal `llm_model_func`), ensure the `OPENAI_API_KEY` (or equivalent for other providers) environment variable is set when running the RAG service.
-*   **Dependencies**: This project has several key dependencies. Pay close attention to the "Environment Setup" section, especially for PyTorch, RDKit (with `numpy<2.0.0`), `unimol_tools`, and `lightrag-hku`.
-*   **PyMol**: Molecular visualization in `visualizer.py` might depend on PyMol installation and configuration.
-*   **`textract` Dependencies**: `textract` (used by the RAG service) may require system-level packages like `pdftotext` to process PDFs. Check `textract` documentation for OS-specific requirements.
+2.  **Access the Application:**
+    Open your web browser and navigate to:
+    [http://localhost:8000](http://localhost:8000)
+
+## Optional: Enabling Full Prediction/RAG Capabilities
+
+The default `requirements.txt` installs dependencies for the core application, excluding heavy AI models to keep the setup lightweight. For full features, including molecule predictions with UniMol models and advanced RAG (Retrieval Augmented Generation) chat capabilities with LightRAG, you need to install additional dependencies.
+
+1.  **Install Full Requirements:**
+    Use the `requirements_full.txt` file for this purpose:
+    ```bash
+    pip install -r requirements_full.txt
+    ```
+    This file includes the core dependencies plus `torch`, `unimol_tools` (placeholder for UniMol related tools), and `lightrag-hku[openai]` (placeholder for LightRAG).
+    *Note: `unimol_tools` and `lightrag-hku[openai]` are placeholders. You may need to find the correct package names or follow specific installation instructions for UniMol and LightRAG if these names are not exact.*
+
+2.  **Model and Service Setup:**
+    *   **UniMol Models:** For molecule predictions, you will need to download and set up the UniMol model files. Refer to the original project documentation (now available in `README_original_gradio.md` or the relevant model repositories) for instructions on obtaining and placing these models. The application may look for these models in specific paths (e.g., `/mnt/backup2/ai4s/...` as seen in some component defaults, or configurable paths).
+    *   **LightRAG Service:** For the RAG chat features, ensure your LightRAG service or any other specified AI model provider (e.g., OpenRouter.ai, OpenAI) is correctly configured with API keys and base URLs in the Chat Interface's configuration section.
+
+    For detailed setup of these advanced features, please consult the `README_original_gradio.md` file or the documentation associated with UniMol and LightRAG.
+
+## File Structure (Brief)
+
+*   `frontend/`: Contains the React frontend source code.
+    *   `frontend/src/`: Main source files for the React application.
+    *   `frontend/dist/`: Pre-built static assets of the frontend (served by FastAPI).
+*   `src/`: Contains the Python backend source code.
+    *   `src/api.py`: The main FastAPI application defining API endpoints and serving the frontend.
+    *   `src/interface.py`: Core logic functions previously used by Gradio, now refactored for FastAPI.
+    *   `src/chatbot.py`: Chat interface logic.
+    *   `src/predictor.py`, `src/MoleculePredictor.py`: Prediction model interfaces.
+    *   `src/reactor.py`: Nano Reactor simulation logic.
+    *   `src/visualizer.py`: Molecule visualization logic.
+*   `requirements.txt`: Core Python dependencies for the backend.
+*   `requirements_full.txt`: Python dependencies for full backend capabilities, including AI models.
+*   `README.md`: This file.
+*   `README_original_gradio.md`: The README file from the original Gradio-based version of the application.
+
+---
+
+This setup allows for a decoupled frontend and backend, with the React application providing a dynamic user experience and FastAPI handling the core processing and API services.
