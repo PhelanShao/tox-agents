@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+numpy
+pandas
+Pillow
+textract
+httpx
+reportlab
+plotly

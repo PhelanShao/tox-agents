@@ -1,4 +1,4 @@
-import gradio as gr
+# import gradio as gr # Removed Gradio
 import os
 from openai import OpenAI
 import json
@@ -58,6 +58,40 @@ class ChatMemory:
                     display_history.append((None, msg["content"][0]["text"]))
                 else:
                     display_history.append((None, msg["content"]))
+        # This method was primarily for Gradio's Chatbot component.
+        # The FastAPI backend should use self.memory.get_history() directly
+        # or a similar method that returns raw message list.
+        # For now, let it be, but it won't be directly used by FastAPI response.
+        display_history = []
+        for msg in self.conversation_history:
+            if msg["role"] == "user":
+                if isinstance(msg["content"], list):
+                    # Simplified for non-Gradio use: just show text part if prompt not hidden
+                    text_content = ""
+                    image_info = ""
+                    if msg.get("hide_prompt"):
+                        # For hidden prompts (like analysis), maybe just indicate an image was sent
+                        image_info = "[Image Sent]"
+                    else:
+                        for part in msg["content"]:
+                            if part.get("type") == "text":
+                                text_content += part["text"] + " "
+                            elif part.get("type") == "image_url":
+                                image_info = "[Image Attached]" # Don't include HTML img tag
+                        text_content = text_content.strip()
+                    display_history.append({"role": "user", "text": f"{text_content} {image_info}".strip()})
+                else: # Simple text message
+                    display_history.append({"role": "user", "text": msg["content"]})
+            else: # Assistant message
+                text_content = ""
+                if isinstance(msg["content"], list) and msg["content"]: # Should be list of parts
+                     for part in msg["content"]:
+                        if part.get("type") == "text":
+                            text_content += part["text"] + " "
+                     text_content = text_content.strip()
+                elif isinstance(msg["content"], str): # Simple text string
+                    text_content = msg["content"]
+                display_history.append({"role": "assistant", "text": text_content})
         return display_history
 
 
@@ -209,148 +243,24 @@ class ChatInterface:
                 if completion and completion.choices:
                     assistant_message = completion.choices[0].message.content
                     self.memory.add_message("assistant", [{"type": "text", "text": assistant_message}])
-                    return self.memory.get_display_history(), ""
+                    # Return raw history for API, not Gradio-formatted display history
+                    return self.memory.get_history(), "" 
                 else:
                     error_msg = "No response from API"
                     self.memory.add_message("assistant", [{"type": "text", "text": error_msg}])
-                    return self.memory.get_display_history(), error_msg
+                    return self.memory.get_history(), error_msg
                     
             except Exception as e:
                 error_msg = f"Error in API call: {str(e)}"
                 self.memory.add_message("assistant", [{"type": "text", "text": error_msg}])
-                return self.memory.get_display_history(), error_msg
+                return self.memory.get_history(), error_msg
 
         except Exception as e:
             error_msg = f"Error: {str(e)}"
-            return history, error_msg
+            # For FastAPI, the history passed in is the raw list of messages.
+            # If an error occurs before API call, return this original history.
+            # If it's after memory update, self.memory.get_history() will include the user's last message.
+            return self.memory.get_history(), error_msg
 
-    def create_interface(self):
-        with gr.Blocks() as interface:
-            chatbot = gr.Chatbot(
-                height=500,
-                label="Chat History",
-                show_copy_button=True
-            )
-            
-            with gr.Row():
-                with gr.Column(scale=8):
-                    msg = gr.Textbox(
-                        label="Message",
-                        placeholder="Type your message here...",
-                        lines=3
-                    )
-                with gr.Column(scale=1):
-                    submit_btn = gr.Button("Send")
-                    clear_btn = gr.Button("Clear")
-
-            # 图片输入选项
-            multimodal_enabled = gr.Checkbox(
-                label="Enable Image Input",
-                value=False
-            )
-            image_input = gr.Image(
-                label="Upload Image",
-                visible=False,
-                type="filepath"
-            )
-
-            with gr.Accordion("API Configuration", open=False):
-                base_url = gr.Textbox(
-                    label="Base URL",
-                    placeholder="Enter API base URL (e.g., https://x/api/v1)"
-                )
-                api_key = gr.Textbox(
-                    label="API Key",
-                    placeholder="Enter your API key",
-                    type="password"
-                )
-                model_select = gr.Dropdown(
-                    choices=self.default_models,
-                    label="Select Model",
-                    value="google/gemini-2.0-flash-thinking-exp:free"
-                )
-                custom_model = gr.Textbox(
-                    label="Custom Model Name",
-                    placeholder="Enter custom model identifier",
-                    visible=False,
-                    interactive=True
-                )
-                api_config_btn = gr.Button("Configure API")
-                error_box = gr.Textbox(
-                    label="Error Messages",
-                    visible=True,
-                    interactive=False
-                )
-
-            def update_model_input(choice):
-                return gr.update(visible=choice == "custom")
-
-            def configure_api(url, key):
-                try:
-                    self.initialize_client(url, key)
-                    return "API configured successfully!"
-                except Exception as e:
-                    return f"Error configuring API: {str(e)}"
-
-            def toggle_image_input(enabled):
-                return gr.update(visible=enabled)
-
-            def clear_chat(self):
-                self.chat_interface.memory.clear()
-                self.chat_interface.memory.conversation_history = []
-                return None, "", gr.update(value=False), gr.update(visible=False)
-            model_select.change(
-                update_model_input,
-                inputs=[model_select],
-                outputs=[custom_model]
-            )
-
-            multimodal_enabled.change(
-                toggle_image_input,
-                inputs=[multimodal_enabled],
-                outputs=[image_input]
-            )
-
-            submit_btn.click(
-                self.process_message,
-                inputs=[
-                    msg,
-                    image_input,
-                    multimodal_enabled,
-                    chatbot,
-                    model_select,
-                    custom_model
-                ],
-                outputs=[chatbot, error_box]
-            )
-
-            msg.submit(
-                self.process_message,
-                inputs=[
-                    msg,
-                    image_input,
-                    multimodal_enabled,
-                    chatbot,
-                    model_select,
-                    custom_model
-                ],
-                outputs=[chatbot, error_box]
-            )
-
-            clear_btn.click(
-                fn=self.clear_chat,
-                outputs=[chatbot, error_box, multimodal_enabled, image_input]
-            )
-
-            api_config_btn.click(
-                configure_api,
-                inputs=[base_url, api_key],
-                outputs=[error_box]
-            )
-
-        return interface
-
-if __name__ == "__main__":
-    chat_interface = ChatInterface()
-    interface = chat_interface.create_interface()
-    interface.launch(share=True)
+    # Removed create_interface() method and if __name__ == "__main__": block
+    # as Gradio UI is no longer part of this file when used by FastAPI backend.

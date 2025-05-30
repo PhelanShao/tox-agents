@@ -1,0 +1,21 @@
+fastapi
+uvicorn
+python-multipart
+numpy
+pandas
+Pillow
+textract
+httpx
+reportlab
+plotly
+torch
+# unimol_tools # Assuming this is the correct package name for UniMol
+# lightrag-hku[openai] # Assuming this is the correct package name and extra for LightRAG
+# For actual use, users would need to ensure these package names are correct
+# and available on PyPI or provide alternative installation instructions.
+# For now, adding placeholders as per instructions.
+# Actual package names might be different, e.g. unimol might be part of a larger toolkit.
+# LightRAG might be `lightrag` with an extra like `lightrag[openai]`.
+# The instructions used "unimol_tools" and "lightrag-hku[openai]". I will use these.
+unimol_tools
+lightrag-hku[openai]
