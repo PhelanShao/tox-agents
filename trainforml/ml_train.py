@@ -1,4 +1,3 @@
-#代码A
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -51,7 +50,6 @@ def set_figure_style():
 
 class MLPipeline:
     def __init__(self, output_dir='ml_outputs'):
-        # 更全面的警告处理
         warnings.filterwarnings('ignore', category=ConvergenceWarning)
         warnings.filterwarnings('ignore', category=UserWarning)
         warnings.filterwarnings('ignore', message='.*DataFrame is highly fragmented.*')
@@ -72,7 +70,7 @@ class MLPipeline:
         self.model_dir = os.path.join(self.output_dir, 'models')
         self.shap_dir = os.path.join(self.output_dir, 'shap_analysis')
         self.feature_importance_dir = os.path.join(self.output_dir, 'feature_importance')
-        self.data_dir = os.path.join(self.output_dir, 'plot_data')  # 新增数据保存目录
+        self.data_dir = os.path.join(self.output_dir, 'plot_data')  
         
         for directory in [self.output_dir, self.plots_dir, self.logs_dir, 
                         self.model_dir, self.shap_dir, self.feature_importance_dir,
@@ -109,7 +107,6 @@ class MLPipeline:
                 self.X, self.y, test_size=0.2, random_state=42, stratify=self.y
             )
             
-            # Scale features - 保存scaler对象以便后续还原数据尺度
             self.scaler = StandardScaler()
             self.X_train_scaled = self.scaler.fit_transform(self.X_train)
             self.X_test_scaled = self.scaler.transform(self.X_test)
@@ -321,7 +318,6 @@ class MLPipeline:
         results_df = pd.DataFrame({name: res['Testing_Metrics'] 
                                 for name, res in self.results.items()}).T
         
-        # 保存性能指标数据
         results_df.to_csv(os.path.join(self.data_dir, 'model_performance.csv'))
         
         plt.figure(figsize=(15, 8))
@@ -379,7 +375,6 @@ class MLPipeline:
                 roc_auc = auc(fpr, tpr)
                 roc_data[name] = {'fpr': fpr, 'tpr': tpr, 'auc': roc_auc}
                 
-                # 保存每个模型的ROC数据
                 pd.DataFrame({'fpr': fpr, 'tpr': tpr}).to_csv(
                     os.path.join(self.data_dir, f'roc_curve_{name}.csv'), index=False
                 )
@@ -416,7 +411,6 @@ class MLPipeline:
                     'mean_predicted_value': mean_predicted_value
                 }
                 
-                # 保存校准曲线数据
                 pd.DataFrame({
                     'mean_predicted_value': mean_predicted_value,
                     'fraction_of_positives': fraction_of_positives
@@ -457,7 +451,6 @@ class MLPipeline:
                 'avg_precision': avg_precision
             }
             
-            # 保存PR曲线数据
             pd.DataFrame({
                 'precision': precision,
                 'recall': recall
@@ -476,81 +469,64 @@ class MLPipeline:
         plt.close()
 
     def perform_shap_analysis(self):
-        """执行SHAP分析，使用自定义方法确保正确显示原始数据尺度"""
         try:
-            # 确保输出目录存在
             os.makedirs(self.shap_dir, exist_ok=True)
             os.makedirs(os.path.join(self.shap_dir, 'html_plots'), exist_ok=True)
             
-            # 准备用于SHAP计算的标准化数据
             X_display_scaled = pd.DataFrame(
                 self.X_train_scaled,
                 columns=self.X.columns
             ).iloc[:, 1:]  # 排除第一列
             
-            # 准备用于显示的原始尺度数据 - 确保索引匹配
-            X_display_original = self.X_train.iloc[:, 1:].reset_index(drop=True)  # 排除第一列并重置索引
+            X_display_original = self.X_train.iloc[:, 1:].reset_index(drop=True)  
             
-            # 获取XGBoost的最佳模型并重新训练
             best_params = self.models['XGBoost'].best_params_
             xgb_model = xgb.XGBClassifier(**best_params, random_state=42)
             xgb_model.fit(X_display_scaled, self.y_train)
             
-            # 创建解释器
             explainer = shap.TreeExplainer(xgb_model)
             shap_values = explainer.shap_values(X_display_scaled)
             
-            # 如果是二分类问题且shap_values是列表，取第一个元素
             if isinstance(shap_values, list):
                 shap_values = shap_values[0]
             
-            # 4. 保存SHAP值到CSV - 使用特征的原始名称
             shap_df = pd.DataFrame(shap_values, columns=X_display_scaled.columns)
             shap_df.to_csv(os.path.join(self.shap_dir, 'shap_values.csv'), index=False)
             
-            # 1. Summary Plot - 使用原始数据
             plt.figure(figsize=(12, 8))
             shap.summary_plot(shap_values, X_display_original, show=False)
             plt.tight_layout()
             plt.savefig(os.path.join(self.shap_dir, 'shap_summary.png'), bbox_inches='tight', dpi=300)
             plt.close()
             
-            # 2. Bar Plot
             plt.figure(figsize=(10, 6))
             shap.summary_plot(shap_values, X_display_scaled, plot_type='bar', show=False)
             plt.tight_layout()
             plt.savefig(os.path.join(self.shap_dir, 'shap_importance.png'), bbox_inches='tight', dpi=300)
             plt.close()
             
-            # 3. Individual Feature Dependence Plots - 使用自定义方法
             for feature in X_display_original.columns:
                 try:
                     feature_idx = X_display_scaled.columns.get_loc(feature)
                     
-                    # 创建包含原始尺度值和对应SHAP值的DataFrame
                     dependence_data = pd.DataFrame({
                         'feature_value': X_display_original[feature].values,
                         'shap_value': shap_values[:, feature_idx]
                     })
                     
-                    # 保存依赖关系数据
                     dependence_data.to_csv(os.path.join(self.shap_dir, f'dependence_{feature}_data.csv'), 
                                         index=False)
                     
-                    # 绘制自定义依赖图，确保x轴显示原始尺度
                     plt.figure(figsize=(10, 6))
                     
-                    # 为每个点着色（可以选择另一个特征进行着色）
                     other_feature = None
                     for other_feat in X_display_original.columns:
                         if other_feat != feature and X_display_original[other_feat].nunique() > 5:
                             other_feature = other_feat
                             break
                     
-                    # 如果找到了适合着色的特征，使用它
                     if other_feature:
                         other_feat_idx = X_display_original.columns.get_loc(other_feature)
-                        # 归一化值用于着色
                         norm_values = (X_display_original[other_feature] - X_display_original[other_feature].min()) / \
                                     (X_display_original[other_feature].max() - X_display_original[other_feature].min())
                         
@@ -558,41 +534,30 @@ class MLPipeline:
                                 c=norm_values, cmap='viridis', alpha=0.7)
                         plt.colorbar(label=other_feature)
                     else:
-                        # 否则使用默认蓝色
                         plt.scatter(X_display_original[feature], shap_values[:, feature_idx], 
                                 color='blue', alpha=0.7)
                     
-                    # 添加平滑线来显示趋势
-                    if len(X_display_original) > 10:  # 只有当有足够的数据点时
-                        # 按特征值排序用于平滑线
+                    if len(X_display_original) > 10:  
                         sorted_idx = X_display_original[feature].argsort()
                         window_size = min(30, max(5, len(X_display_original) // 10))
                         
-                        # 使用移动平均计算平滑线
                         x_sorted = X_display_original[feature].iloc[sorted_idx]
                         y_sorted = shap_values[sorted_idx, feature_idx]
                         
-                        # 创建移动平均线
                         from scipy.ndimage import gaussian_filter1d
                         x_unique, indices = np.unique(x_sorted, return_index=True)
-                        if len(x_unique) > 1:  # 确保有多个唯一x值
+                        if len(x_unique) > 1:  
                             y_mean = np.array([np.mean(y_sorted[x_sorted == x]) for x in x_unique])
                             
-                            # 应用高斯平滑
-                            if len(y_mean) > 3:  # 至少需要几个点才能平滑
+                            if len(y_mean) > 3:  
                                 y_smooth = gaussian_filter1d(y_mean, sigma=1)
                                 plt.plot(x_unique, y_smooth, color='red', linewidth=2)
                     
-                    # 添加水平参考线在y=0
-                    plt.axhline(y=0, color='gray', linestyle='--', alpha=0.6)
-                    
-                    # 添加标题和标签
+                    plt.axhline(y=0, color='gray', linestyle='--', alpha=0.6)                    
                     plt.title(f'SHAP Dependence Plot for {feature}')
                     plt.xlabel(feature)
                     plt.ylabel(f'SHAP value for {feature}')
                     plt.grid(True, alpha=0.3)
-                    
-                    # 保存图片
                     plt.tight_layout()
                     plt.savefig(os.path.join(self.shap_dir, f'dependence_{feature}.png'), 
                             bbox_inches='tight', dpi=300)
@@ -602,44 +567,32 @@ class MLPipeline:
                     logging.error(f"Error creating dependence plot for {feature}: {str(e)}")
                     continue
             
-            # 5. 只创建重要特征的交互图
-            # 获取最重要的特征（基于平均绝对SHAP值）
             mean_abs_shap = np.abs(shap_values).mean(axis=0)
-            top_indices = np.argsort(-mean_abs_shap)[:10]  # 取前10个最重要特征
+            top_indices = np.argsort(-mean_abs_shap)[:10]  
             top_features = [X_display_original.columns[i] for i in top_indices]
-            
-            # 为重要特征绘制交互图
+
             for i, feat1 in enumerate(top_features):
                 for j in range(i+1, len(top_features)):
                     feat2 = top_features[j]
                     try:
                         plt.figure(figsize=(10, 6))
-                        
-                        # 获取特征索引
+
                         feat1_idx = X_display_original.columns.get_loc(feat1)
                         feat2_idx = X_display_original.columns.get_loc(feat2)
-                        
-                        # 创建散点图，X轴是特征1，Y轴是特征1的SHAP值，颜色表示特征2
+
                         sc = plt.scatter(X_display_original[feat1], shap_values[:, feat1_idx],
                                     c=X_display_original[feat2], cmap='viridis', alpha=0.7)
-                        
-                        # 添加颜色条
+
                         cbar = plt.colorbar(sc)
                         cbar.set_label(feat2)
-                        
-                        # 添加平滑线
-                        # (这里可以添加类似上面的平滑线代码)
-                        
-                        # 添加水平参考线
+
                         plt.axhline(y=0, color='gray', linestyle='--', alpha=0.6)
-                        
-                        # 添加标题和标签
+
                         plt.title(f'SHAP Interaction: {feat1} vs {feat2}')
                         plt.xlabel(feat1)
                         plt.ylabel(f'SHAP value for {feat1}')
                         plt.grid(True, alpha=0.3)
-                        
-                        # 保存图片
+
                         plt.tight_layout()
                         plt.savefig(
                             os.path.join(self.shap_dir, f'interaction_{feat1}_vs_{feat2}.png'),
