@@ -107,7 +107,7 @@ This is the final output stage.
 Clone the repository and install the required dependencies using the provided script. This will set up the correct Conda environment and install all necessary packages.
 
 ```bash
-git clone https://github.com/your-username/ToxD4C.git
+git clone https://github.com/PhelanShao/ToxD4C.git
 cd ToxD4C
 bash install_dependencies.sh
 ```
@@ -155,11 +155,3 @@ python inference_toxd4c.py \
 The script will generate a `inference_results.csv` file containing the detailed predicted toxicity profiles for the input molecules.
 
 ---
-
-## 🤝 Contribution
-
-Contributions are welcome! If you have ideas for improvements, new features, or have found a bug, please feel free to open an issue or submit a pull request.
-
----
-
-**ToxD4C - Making molecular toxicity prediction more accurate, reliable, and intelligent.** 🧬✨
