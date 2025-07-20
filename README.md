@@ -4,7 +4,16 @@
 [![Next.js](https://img.shields.io/badge/Next.js-14.2+-black.svg)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-latest-green.svg)](https://fastapi.tiangolo.com/)
 
-A comprehensive AI-powered platform for molecular toxicity prediction, combining deep learning models (UniMol(https://github.com/deepmodeling/Uni-Mol), ToxD4C(https://github.com/PhelanShao/ToxD4C)), interactive 3D visualization, and intelligent conversational analysis. This platform provides accurate molecular toxicity assessments through a modern web interface.
+A comprehensive AI-powered platform for molecular toxicity prediction, combining deep learning models [ 4Transfer-learning UniMol(https://github.com/deepmodeling/Uni-Mol), From_scratch ToxD4C(https://github.com/PhelanShao/ToxD4C)], interactive 3D visualization, and intelligent conversational analysis. This platform provides accurate molecular toxicity assessments through a modern web interface.
+
+# Deployment and related projects
+The Tox-agents intelligent agent has been deployed as a web application, accessible at https://toxagents.lwy-ai4water-lab.com/ & https://www.bohrium.com/apps/toxagents (LTS, Long Term Support). 
+The complete source code is available in the open-source GitHub repository: https://github.com/PhelanShao/tox-agents
+
+### The nanoreactor framework for predicting pollutant degradation products and reaction networks is deployed through the following applications:
+MolReac:One: A fully automated, one-click tool for rapid reaction network exploration, available at: https://molreac.lwy-ai4water-lab.com/ & https://www.bohrium.com/apps/molreacone (LTS).
+Molreac:Zero: A more comprehensive version for users who require fine-grained control over reaction kinetics and other advanced parameters, accessible at: https://www.bohrium.com/apps/molreac (LTS).
+
 
 ## Key Features
 
