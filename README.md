@@ -11,8 +11,27 @@ The Tox-agents intelligent agent has been deployed as a web application, accessi
 The complete source code is available in the open-source GitHub repository: https://github.com/PhelanShao/tox-agents
 
 ### The nanoreactor framework for predicting pollutant degradation products and reaction networks is deployed through the following applications:
-MolReac:One: A fully automated, one-click tool for rapid reaction network exploration, available at: https://molreac.lwy-ai4water-lab.com/ & https://www.bohrium.com/apps/molreacone (LTS).
-Molreac:Zero: A more comprehensive version for users who require fine-grained control over reaction kinetics and other advanced parameters, accessible at: https://www.bohrium.com/apps/molreac (LTS).
+
+Reaction_network：An executable program for parsing and visualizing the results of molreac calculations (tool for parsing .reacnet files) https://github.com/PhelanShao/reaction_network
+
+MolReac:One: A fully automated, one-click tool for rapid reaction network exploration, available at: https://molreac.lwy-ai4water-lab.com/ & https://www.bohrium.com/apps/molreacone (LTS)
+
+Molreac:Zero: A more comprehensive version for users who require fine-grained control over reaction kinetics and other advanced parameters, accessible at: https://www.bohrium.com/apps/molreac (LTS)
+
+
+# For reviewer
+
+## Data Integrity
+The training dataset for machine learning and UniMol transfer learning comes from 21sttox10k. We performed DFT structure optimization and molecular descriptor extraction. https://github.com/PhelanShao/tox-agents/blob/main/data/DATA_labels.csv
+The training dataset for ToxD4C comes from TOXRIC, TDC and Wu et al. databases. You can obtain the dataset through https://drive.google.com/drive/folders/1lEFMaGd3gHZVfiKdQqBWKUYg-Jdrc0U8?usp=sharing and place it under main/ToxD4C_framework/data to start training.
+
+## Training and Scripts
+ToxD4C training script:
+main/ToxD4C_framework/train.py
+UniMol transfer learning training script example:
+main/trainfordl/3528_datasets/3528_train.py
+Machine learning baseline training script:
+main/trainforml/ml_train.py
 
 
 ## Key Features
