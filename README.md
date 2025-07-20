@@ -18,6 +18,8 @@ MolReac:One: A fully automated, one-click tool for rapid reaction network explor
 
 Molreac:Zero: A more comprehensive version for users who require fine-grained control over reaction kinetics and other advanced parameters, accessible at: https://www.bohrium.com/apps/molreac (LTS)
 
+![演示动画](https://github.com/PhelanShao/reaction_network/blob/main/reacnet/demo2.gif)
+![演示动画](https://github.com/PhelanShao/reaction_network/blob/main/reacnet/demo3.gif)
 
 ## For reviewer
 
