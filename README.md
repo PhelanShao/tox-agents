@@ -19,18 +19,26 @@ MolReac:One: A fully automated, one-click tool for rapid reaction network explor
 Molreac:Zero: A more comprehensive version for users who require fine-grained control over reaction kinetics and other advanced parameters, accessible at: https://www.bohrium.com/apps/molreac (LTS)
 
 
-# For reviewer
+## For reviewer
 
-## Data Integrity
+### Data Integrity
+
 The training dataset for machine learning and UniMol transfer learning comes from 21sttox10k. We performed DFT structure optimization and molecular descriptor extraction. https://github.com/PhelanShao/tox-agents/blob/main/data/DATA_labels.csv
+
 The training dataset for ToxD4C comes from TOXRIC, TDC and Wu et al. databases. You can obtain the dataset through https://drive.google.com/drive/folders/1lEFMaGd3gHZVfiKdQqBWKUYg-Jdrc0U8?usp=sharing and place it under main/ToxD4C_framework/data to start training.
 
-## Training and Scripts
+### Training and Scripts
+
 ToxD4C training script:
+
 main/ToxD4C_framework/train.py
+
 UniMol transfer learning training script example:
+
 main/trainfordl/3528_datasets/3528_train.py
+
 Machine learning baseline training script:
+
 main/trainforml/ml_train.py
 
 
