@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-09-02T00:52:36.436045",
+  "random_seeds": {
+    "outer_cv": 42,
+    "inner_cv": 42,
+    "bootstrap_ci": 42,
+    "mechanism_bootstrap": 42
+  },
+  "final_thresholds": {
+    "binary": 0.122211,
+    "ternary_low": 0.077506,
+    "ternary_high": 0.166916,
+    "min_gap_enforced": 0.0894,
+    "gap_protection_applied": true
+  },
+  "nested_cv_configuration": {
+    "outer_folds": 5,
+    "inner_folds": 3,
+    "stratified": true,
+    "threshold_selection_metric": "Youden_J"
+  }
+}

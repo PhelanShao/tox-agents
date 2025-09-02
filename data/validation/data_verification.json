@@ -1,0 +1,58 @@
+{
+  "timestamp": "2025-09-01T23:33:53.173403",
+  "verification_status": "PASSED",
+  "verified_files": {
+    "21st\u6570\u636e\u96c6": {
+      "path": "output/data/processed_final8k213.csv",
+      "size": 2024667,
+      "exists": true
+    },
+    "SC2\u6570\u636e": {
+      "path": "data_collation/Summary_Files/INVITRODB_V4_2_SUMMARY/sc1_sc2_invitrodb_v4_2_SEPT2024.xlsx",
+      "size": 189653566,
+      "exists": true
+    },
+    "MC5-6\u6570\u636e": {
+      "path": "data_collation/Summary_Files/INVITRODB_V4_2_SUMMARY/mc5-6_winning_model_fits-flags_invitrodbv4_2_SEPT2024.csv",
+      "size": 2402634774,
+      "exists": true
+    },
+    "Cytotox\u6570\u636e": {
+      "path": "data_collation/Summary_Files/INVITRODB_V4_2_SUMMARY/cytotox_invitrodb_v4_2_SEPT2024.xlsx",
+      "size": 881261,
+      "exists": true
+    },
+    "Assay\u6ce8\u91ca": {
+      "path": "data_collation/Summary_Files/INVITRODB_V4_2_SUMMARY/assay_annotations_invitrodb_v4_2_SEPT2024.xlsx",
+      "size": 631300,
+      "exists": true
+    },
+    "CAS\u6620\u5c04": {
+      "path": "output/data/cas_download_progress.json",
+      "size": 230811,
+      "exists": true
+    },
+    "\u5316\u5b66\u54c1\u6865\u8868": {
+      "path": "output/data/chemical_bridge_table.csv",
+      "size": 359345,
+      "exists": true
+    },
+    "ToxRefDB": {
+      "path": "tox21_toxrefdb_matched_via_cas.csv",
+      "size": 82787,
+      "exists": true
+    }
+  },
+  "data_summary": {
+    "21st_records": 7330,
+    "sc2_records": 510971,
+    "cas_mappings": 9041,
+    "bridge_mappings": 8115,
+    "toxrefdb_records": 1414
+  },
+  "data_quality_checks": {
+    "sc2_hitc_valid": true,
+    "all_required_columns_present": true,
+    "no_fabricated_data": true
+  }
+}

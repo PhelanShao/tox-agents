@@ -1,0 +1,40 @@
+{
+  "delivery_info": {
+    "timestamp": "2025-09-02T09:10:27.374500",
+    "version": "tcpl_fully_compliant_final",
+    "compliance_level": "EPA_ToxCast_tcpl_compliant"
+  },
+  "deliverables": {
+    "code": [
+      "code/tcpl_system_final.py",
+      "code/data_verification.py",
+      "code/mapping_system.py"
+    ],
+    "data": [
+      "data/original/processed_final8k213_original.csv",
+      "data/final/processed_final8k213_tcpl_labeled_final.csv",
+      "data/processed/tcpl_chemical_scores_final.csv",
+      "data/final/dataset_summary.json"
+    ],
+    "validation": [
+      "validation/external_validation_results.csv",
+      "validation/data_verification.json",
+      "validation/data_integrity_sha256.json",
+      "validation/reproducibility_report.json"
+    ],
+    "documentation": [
+      "documentation/USAGE_GUIDE.md",
+      "reports/compliance_assessment.md",
+      "reports/system_analysis.md",
+      "readme.md"
+    ]
+  },
+  "key_metrics": {
+    "total_chemicals": 7330,
+    "tcpl_labeled_chemicals": 6216,
+    "coverage_rate": 0.848,
+    "external_validation_auc": 0.544,
+    "spearman_correlation": 0.072,
+    "cytotox_filtered_records": 21258
+  }
+}

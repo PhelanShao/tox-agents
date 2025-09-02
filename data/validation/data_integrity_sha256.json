@@ -1,0 +1,69 @@
+{
+  "timestamp": "2025-09-02T00:51:57.041278",
+  "tcpl_compliance_version": "fully_compliant",
+  "data_files": {
+    "sc2": {
+      "file": "sc1_sc2_invitrodb_v4_2_SEPT2024.xlsx",
+      "sha256": "29a2b8298d0ec748c63cca5463e2259dcbaffbacf96f2d0191aafc785a8c22d8",
+      "purpose": "Official hitc values (-1/0/1)",
+      "columns_used": [
+        "chid",
+        "aeid",
+        "hitc",
+        "casn"
+      ]
+    },
+    "mc56": {
+      "file": "mc5-6_winning_model_fits-flags_invitrodbv4_2_SEPT2024.csv",
+      "sha256": "f61eb0e9bc2c63907fd9a81fd325b40d6d5cbe377efef11d0328b6687a1f9e35",
+      "purpose": "mc6_flags and ac50/conc_unit only",
+      "columns_used": [
+        "chid",
+        "aeid",
+        "mc6_flags",
+        "ac50",
+        "conc_unit"
+      ]
+    },
+    "cytotox": {
+      "file": "cytotox_invitrodb_v4_2_SEPT2024.xlsx",
+      "sha256": "c85bf754274f491b71f24e3898d196a1f0280cc0b85a0a5eddcd1e2e290e10cd",
+      "purpose": "Cytotoxicity burst filtering",
+      "columns_used": [
+        "chid",
+        "cytotox_lower_bound_log"
+      ]
+    },
+    "assay_annotations": {
+      "file": "assay_annotations_invitrodb_v4_2_SEPT2024.xlsx",
+      "sha256": "50280fb0da2a31cfa80456b22d2f56c641669171cabec0715ff2210888000c24",
+      "purpose": "Endpoint to mechanism mapping",
+      "columns_used": [
+        "aeid",
+        "intended_target_family"
+      ]
+    },
+    "toxrefdb": {
+      "file": "tox21_toxrefdb_matched_via_cas.csv",
+      "sha256": "f2aa6f4a1133ea95b9217ed215ecbca88b690a443507a73757d7d15fc31169cc",
+      "purpose": "External validation POD values",
+      "columns_used": [
+        "CAS_NORM",
+        "POD_MGKGDAY",
+        "PUBCHEM_CID"
+      ]
+    }
+  },
+  "mapping_files": {
+    "cas_mapping": {
+      "file": "cas_download_progress.json",
+      "sha256": "c49a8cd9695446f2a2212077bb32cd7ba278bbbc649e37f68b54bb63cda65513",
+      "purpose": "CAS to PUBCHEM_CID mapping"
+    },
+    "bridge_table": {
+      "file": "chemical_bridge_table.csv",
+      "sha256": "4cf43c3b5b17eaec2b65b7edbf9fceef9407bee70854d36fd81dbc78e8d822a2",
+      "purpose": "chid to CAS mapping"
+    }
+  }
+}
