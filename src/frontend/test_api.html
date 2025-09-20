@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分子毒性预测API测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .test-section h3 {
+            color: #555;
+            margin-top: 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 5px;
+        }
+        .file-upload {
+            margin: 15px 0;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.online {
+            background-color: #28a745;
+            color: white;
+        }
+        .status.offline {
+            background-color: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 分子毒性预测API测试界面</h1>
+        
+        <!-- API状态检查 -->
+        <div class="test-section">
+            <h3>📡 API连接状态</h3>
+            <button onclick="checkHealth()">检查API健康状态</button>
+            <button onclick="testImport()">测试模块导入</button>
+            <div id="status-indicator">
+                <span class="status offline">离线</span>
+            </div>
+            <div id="health-result" class="result info" style="display: none;"></div>
+        </div>
+
+        <!-- 文件转换测试 -->
+        <div class="test-section">
+            <h3>🔄 文件转换测试</h3>
+            <div class="file-upload">
+                <label>上传XYZ文件:</label>
+                <input type="file" id="xyz-file" accept=".xyz">
+                <button onclick="testXyzToNpz()">测试XYZ转NPZ</button>
+            </div>
+            <div class="file-upload">
+                <label>上传NPZ文件:</label>
+                <input type="file" id="npz-file" accept=".npz">
+                <button onclick="testNpzToXyz()">测试NPZ转XYZ</button>
+            </div>
+            <div id="conversion-result" class="result info" style="display: none;"></div>
+        </div>
+
+        <!-- 预测测试 -->
+        <div class="test-section">
+            <h3>🔮 毒性预测测试</h3>
+            <div class="file-upload">
+                <label>上传NPZ文件进行预测:</label>
+                <input type="file" id="prediction-file" accept=".npz">
+                <button onclick="testBinaryPrediction()">测试二元分类预测</button>
+                <button onclick="testPropertyPrediction()">测试属性预测</button>
+            </div>
+            <div id="prediction-result" class="result info" style="display: none;"></div>
+        </div>
+
+        <!-- 可视化测试 -->
+        <div class="test-section">
+            <h3>👁️ 分子可视化测试</h3>
+            <div class="file-upload">
+                <label>上传NPZ文件进行可视化:</label>
+                <input type="file" id="visualization-file" accept=".npz">
+                <button onclick="testVisualization()">测试分子可视化</button>
+            </div>
+            <div id="visualization-result" class="result info" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+
+        // 显示结果
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.textContent = typeof content === 'object' ? JSON.stringify(content, null, 2) : content;
+            element.style.display = 'block';
+        }
+
+        // 更新状态指示器
+        function updateStatus(online) {
+            const indicator = document.getElementById('status-indicator');
+            indicator.innerHTML = `<span class="status ${online ? 'online' : 'offline'}">${online ? '在线' : '离线'}</span>`;
+        }
+
+        // 检查API健康状态
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('health-result', data, 'success');
+                    updateStatus(true);
+                } else {
+                    showResult('health-result', `错误: ${response.status} - ${data.message || '未知错误'}`, 'error');
+                    updateStatus(false);
+                }
+            } catch (error) {
+                showResult('health-result', `连接失败: ${error.message}`, 'error');
+                updateStatus(false);
+            }
+        }
+
+        // 测试模块导入
+        async function testImport() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/test-import`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('health-result', data, data.success ? 'success' : 'error');
+                } else {
+                    showResult('health-result', `错误: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult('health-result', `连接失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试XYZ转NPZ
+        async function testXyzToNpz() {
+            const fileInput = document.getElementById('xyz-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResult('conversion-result', '请先选择XYZ文件', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                showResult('conversion-result', '正在转换...', 'info');
+                const response = await fetch(`${API_BASE_URL}/api/convert/xyz-to-npz`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                showResult('conversion-result', data, data.success ? 'success' : 'error');
+            } catch (error) {
+                showResult('conversion-result', `转换失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试NPZ转XYZ
+        async function testNpzToXyz() {
+            const fileInput = document.getElementById('npz-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResult('conversion-result', '请先选择NPZ文件', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                showResult('conversion-result', '正在转换...', 'info');
+                const response = await fetch(`${API_BASE_URL}/api/convert/npz-to-xyz`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                showResult('conversion-result', data, data.success ? 'success' : 'error');
+            } catch (error) {
+                showResult('conversion-result', `转换失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试二元分类预测
+        async function testBinaryPrediction() {
+            const fileInput = document.getElementById('prediction-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResult('prediction-result', '请先选择NPZ文件', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('model_path', '/mnt/backup2/ai4s/backupunimolpy/ToxPred_modelmini');
+
+            try {
+                showResult('prediction-result', '正在进行二元分类预测...', 'info');
+                const response = await fetch(`${API_BASE_URL}/api/predict/binary`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                showResult('prediction-result', data, data.success ? 'success' : 'error');
+            } catch (error) {
+                showResult('prediction-result', `预测失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试属性预测
+        async function testPropertyPrediction() {
+            const fileInput = document.getElementById('prediction-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResult('prediction-result', '请先选择NPZ文件', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('model_path', '/mnt/backup2/ai4s/backupunimolpy/MD_model');
+            formData.append('reference_path', '/mnt/backup2/ai4s/backupunimolpy/refscale.npz');
+
+            try {
+                showResult('prediction-result', '正在进行属性预测...', 'info');
+                const response = await fetch(`${API_BASE_URL}/api/predict/property`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                showResult('prediction-result', data, data.success ? 'success' : 'error');
+            } catch (error) {
+                showResult('prediction-result', `预测失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试分子可视化
+        async function testVisualization() {
+            const fileInput = document.getElementById('visualization-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResult('visualization-result', '请先选择NPZ文件', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('frame_index', '0');
+            formData.append('representation', 'sticks');
+            formData.append('rotation_x', '0');
+            formData.append('rotation_y', '0');
+            formData.append('rotation_z', '0');
+            formData.append('zoom', '1.0');
+
+            try {
+                showResult('visualization-result', '正在生成分子可视化...', 'info');
+                const response = await fetch(`${API_BASE_URL}/api/visualize/molecule`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.image_base64) {
+                    // 显示图像
+                    const resultDiv = document.getElementById('visualization-result');
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <p>可视化成功!</p>
+                        <img src="data:image/png;base64,${data.data.image_base64}" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px;">
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    resultDiv.style.display = 'block';
+                } else {
+                    showResult('visualization-result', data, data.success ? 'success' : 'error');
+                }
+            } catch (error) {
+                showResult('visualization-result', `可视化失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载时自动检查API状态
+        window.onload = function() {
+            checkHealth();
+        };
+    </script>
+</body>
+</html>

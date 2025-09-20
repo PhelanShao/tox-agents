@@ -10,14 +10,27 @@ class MultiScalePredictionHead(nn.Module):
                  dropout: float = 0.1,
                  uncertainty_weighting: bool = False,
                  classification_tasks_list: List[str] = None,
-                 regression_tasks_list: List[str] = None):
+                 regression_tasks_list: List[str] = None,
+                 single_endpoint_cls: Optional[int] = None,
+                 single_endpoint_reg: Optional[int] = None):
         super().__init__()
         
         self.input_dim = input_dim
         self.task_configs = task_configs
         self.uncertainty_weighting = uncertainty_weighting
-        self.classification_tasks_list = classification_tasks_list or []
-        self.regression_tasks_list = regression_tasks_list or []
+        self.single_endpoint_cls = single_endpoint_cls
+        self.single_endpoint_reg = single_endpoint_reg
+        
+        # Filter tasks for single endpoint mode
+        if single_endpoint_cls is not None:
+            self.classification_tasks_list = [classification_tasks_list[single_endpoint_cls]] if classification_tasks_list and single_endpoint_cls < len(classification_tasks_list) else []
+            self.regression_tasks_list = []
+        elif single_endpoint_reg is not None:
+            self.classification_tasks_list = []
+            self.regression_tasks_list = [regression_tasks_list[single_endpoint_reg]] if regression_tasks_list and single_endpoint_reg < len(regression_tasks_list) else []
+        else:
+            self.classification_tasks_list = classification_tasks_list or []
+            self.regression_tasks_list = regression_tasks_list or []
         
         self.task_heads = nn.ModuleDict()
         
@@ -41,36 +54,22 @@ class MultiScalePredictionHead(nn.Module):
                     nn.Linear(input_dim // 2, output_dim)
                 )
 
-    def forward(self, x: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
-        predictions = {}
-        uncertainties = {}
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        cls_preds_list = []
+        reg_preds_list = []
 
         for task_name in self.classification_tasks_list:
             if task_name in self.task_heads:
-                predictions[task_name] = self.task_heads[task_name](x)
-                if self.uncertainty_weighting:
-                    uncertainties[task_name] = self.uncertainty_heads[task_name](x)
+                cls_preds_list.append(self.task_heads[task_name](x))
 
         for task_name in self.regression_tasks_list:
             if task_name in self.task_heads:
-                predictions[task_name] = self.task_heads[task_name](x)
-                if self.uncertainty_weighting:
-                    uncertainties[task_name] = self.uncertainty_heads[task_name](x)
-
-        # For compatibility with old format, we can still return concatenated tensors
-        # but the dictionary format is more flexible for interpretation.
-        cls_preds_list = [predictions[t] for t in self.classification_tasks_list if t in predictions]
-        reg_preds_list = [predictions[t] for t in self.regression_tasks_list if t in predictions]
+                reg_preds_list.append(self.task_heads[task_name](x))
 
         cls_preds = torch.cat(cls_preds_list, dim=1) if cls_preds_list else torch.empty(x.size(0), 0, device=x.device)
         reg_preds = torch.cat(reg_preds_list, dim=1) if reg_preds_list else torch.empty(x.size(0), 0, device=x.device)
 
-        output_preds = {
-            'classification': cls_preds,
-            'regression': reg_preds
-        }
-
-        return output_preds, uncertainties
+        return cls_preds, reg_preds
 
 
 if __name__ == '__main__':

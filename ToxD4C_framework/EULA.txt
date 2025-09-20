@@ -1,0 +1,70 @@
+ToxD4C END USER LICENSE AGREEMENT (EULA)
+Version: 2025-08-25
+
+IMPORTANT: BY INSTALLING OR USING THE SOFTWARE (DEFINED BELOW), YOU AGREE TO BE
+BOUND BY THIS EULA.
+
+1. Definitions
+   1.1 "Software" means the ToxD4C Windows executable and any accompanying
+       runtime components, configuration files, and documentation distributed
+       in binary/object code form by Licensor.
+   1.2 "Licensor" means Phelan Shao.
+
+2. Grant of License (Non-Commercial Only)
+   Subject to this EULA, Licensor grants you a personal, limited, revocable,
+   non-exclusive, non-transferable, and non-sublicensable license to install
+   and use the Software solely for non-commercial purposes.
+
+3. Restrictions
+   Except to the extent that such restriction is prohibited by applicable law,
+   you shall NOT:
+   (a) reverse engineer, decompile, disassemble, or otherwise attempt to derive
+       source code, underlying ideas, algorithms, file formats, or non-public
+       APIs of the Software;
+   (b) modify, adapt, translate, or create derivative works of the Software;
+   (c) rent, lease, lend, sell, sublicense, distribute, or otherwise make the
+       Software or any functionality thereof available to any third party;
+   (d) use the Software to provide paid or unpaid services whose value derives
+       entirely or substantially from the Software’s functionality (including
+       but not limited to SaaS/hosting, consulting, or support services);
+   (e) remove, obscure, or alter any proprietary notices, trademarks, or labels.
+
+4. Ownership
+   The Software is licensed, not sold. Licensor and its licensors retain all
+   right, title, and interest in and to the Software and all copies thereof.
+
+5. Updates
+   Licensor may, but has no obligation to, provide updates, fixes, or patches.
+   Any such updates are subject to this EULA unless a different license is
+   provided with the update.
+
+6. Termination
+   This EULA is effective until terminated. It will automatically terminate
+   without notice if you breach any term. Upon termination, you must cease use
+   and destroy all copies of the Software.
+
+7. Disclaimer of Warranties
+   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, WHETHER
+   EXPRESS, IMPLIED, OR STATUTORY, INCLUDING WITHOUT LIMITATION WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+8. Limitation of Liability
+   TO THE MAXIMUM EXTENT PERMITTED BY LAW, LICENSOR SHALL NOT BE LIABLE FOR ANY
+   INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR EXEMPLARY DAMAGES, OR ANY
+   LOSS OF PROFITS, REVENUE, DATA, OR USE, EVEN IF LICENSOR HAS BEEN ADVISED OF
+   THE POSSIBILITY OF SUCH DAMAGES.
+
+9. Compliance with Laws and Third-Party Rights
+   You are responsible for compliance with applicable laws and for respecting
+   third-party rights while using the Software.
+
+10. Governing Law; Venuehina
+   This EULA shall be governed by the laws of China. The exclusive
+   jurisdiction and venue shall be the courts located in China.
+
+11. Entire Agreement
+   This EULA constitutes the entire agreement regarding the Software and
+   supersedes all prior or contemporaneous agreements on this subject.
+
+12. Contact
+   For commercial licensing or exceptions, contact: whitedwarfproducer@gmail.com

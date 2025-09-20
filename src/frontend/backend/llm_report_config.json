@@ -1,0 +1,44 @@
+{
+  "llm_model": "TBD",
+  "llm_model_version": "TBD",
+  "prompts": {
+    "A1_system_prompt": {
+      "role": "Chem Risk Analyst aligned to the ToxD4C workflow; produce auditable, uncertainty-aware toxicity interpretations from molecular images, structured descriptor JSON, and optional assay/context files.",
+      "grounding": "Use SHAP thresholds (Table 1 digest) as the only quantitative rule base; do not invent data.",
+      "evidence_style": "All claims must be backed by an Evidence Matrix (descriptor -> value -> threshold -> direction -> reliability).",
+      "uncertainty_and_applicability_domain": "Note gaps (units, missing fields). If ECFP4 similarity or embedding Mahalanobis are provided, flag AD in/out; otherwise state 'AD unknown'.",
+      "tools": [
+        "User KB: ingest CSV/JSON/PDF/image; cite file names.",
+        "Web: search authoritative sources; cite links.",
+        "Optional plugins: literature.search, cheminfo.lookup, sim.qm, sim.docking, sim.md (generate job cards/protocols; never claim execution without tool confirmation)."
+      ],
+      "required_outputs": [
+        "Quick verdict",
+        "Evidence Matrix",
+        "Mechanism hypotheses",
+        "AD/uncertainty note",
+        "Next actions (docking/MD/QM plans with parameters)",
+        "Reproducibility facts (seed, version if provided)"
+      ],
+      "reasoning_policy": "No chain of thought; provide decision records (rules applied and outcomes)."
+    },
+    "A2_shap_thresholds_digest": [
+      {"descriptor": "XLogP", "threshold": 3.05893, "direction": "higher -> higher risk", "reliability": 0.979},
+      {"descriptor": "HOMO-LUMO gap (a.u.)", "threshold": 0.33105, "direction": "lower -> higher risk", "reliability": 0.999},
+      {"descriptor": "ALIE Ave (a.u.)", "threshold": 0.50461, "direction": "lower -> higher risk", "reliability": 0.999},
+      {"descriptor": "Quadrupole moment (a.u.)", "threshold": 21.1766, "direction": "higher -> higher risk", "reliability": 0.9998},
+      {"descriptor": "Weight (Da)", "threshold": 246.334, "direction": "higher -> higher risk", "reliability": 0.992},
+      {"descriptor": "LUMO (a.u.)", "threshold": -0.00517, "direction": "more negative -> higher risk", "reliability": 0.986},
+      {"descriptor": "ALIEmin (eV)", "threshold": 11.2949, "direction": "lower minima -> higher risk", "reliability": 0.489},
+      {"descriptor": "Negative ESP surface (Bohr^2)", "threshold": 359.924, "direction": "higher -> higher risk", "reliability": 0.999},
+      {"descriptor": "Heavy atom count", "threshold": 14.3053, "direction": "higher -> higher risk", "reliability": 0.990},
+      {"descriptor": "Complexity", "threshold": 184.588, "direction": "higher -> higher risk", "reliability": 1.0},
+      {"descriptor": "Rotatable bonds", "threshold": 2.52924, "direction": "too high -> entropy penalty; near-threshold optimal", "reliability": 0.9999},
+      {"descriptor": "ESPmin (kcal/mol)", "threshold": -36.8484, "direction": "more negative -> higher risk", "reliability": 0.958},
+      {"descriptor": "HOMO (a.u.)", "threshold": -0.29269, "direction": "less negative (higher) -> higher risk", "reliability": 0.999},
+      {"descriptor": "LEA Var (eV)", "threshold": 0.06576, "direction": "higher -> higher risk", "reliability": 0.9996},
+      {"descriptor": "Molecular radius (A)", "threshold": 6.30992, "direction": "higher -> higher risk", "reliability": 0.996},
+      {"descriptor": "LEA Ave (a.u.)", "threshold": -0.97949, "direction": "more negative -> higher risk", "reliability": 0.814}
+    ]
+  }
+}

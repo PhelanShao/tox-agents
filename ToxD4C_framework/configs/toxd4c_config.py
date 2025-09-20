@@ -1,5 +1,4 @@
 from typing import Dict, List, Any
-import copy
 
 
 CLASSIFICATION_TASKS = [
@@ -50,7 +49,7 @@ TASK_GROUPS = {
 TASK_WEIGHTS = {
     'Carcinogenicity': 2.0,
     'Ames Mutagenicity': 2.0,
-    'Acute oral toxicity (LD50)': 3.0,
+    'Acute oral toxicity (LD50)': 2.0,
     
     'Cardiotoxicity1': 1.5,
     'Cardiotoxicity5': 1.5,
@@ -63,10 +62,10 @@ TASK_WEIGHTS = {
     'CYP2C9': 1.2,
     'CYP2C19': 1.2,
     
-    'LC50': 2.5,
-    'IGC50': 2.5,
-    'BCF': 2.5,
-    'LC50DM': 2.5,
+    'LC50': 1.3,
+    'IGC50': 1.3,
+    'BCF': 1.2,
+    'LC50DM': 1.2,
 }
 
 def get_task_weights() -> Dict[str, float]:
@@ -100,9 +99,16 @@ def get_enhanced_toxd4c_config() -> Dict[str, Any]:
         'hierarchy_levels': [2, 4, 8],
         
         'use_hybrid_architecture': True,
+        # GNN backbone options: 'graph_attention' (default) or 'pyg_gcn_stack'
+        'gnn_backbone': 'graph_attention',
+        'use_gnn': True,  # Ablation toggle for the GNN branch
+        'use_transformer': True,  # Ablation toggle for the transformer branch
         'gnn_layers': 3,
+        # If 'pyg_gcn_stack' is selected, this controls the stack depth (recommended 2-4)
+        'gcn_stack_layers': 3,
         'transformer_layers': 3,
         'fusion_method': 'cross_attention',
+        'use_dynamic_fusion': True,  # Ablation toggle for the dynamic fusion module
         
         'use_fingerprints': True,
         'fingerprint_dim': 512,
@@ -138,68 +144,6 @@ def get_enhanced_toxd4c_config() -> Dict[str, Any]:
         'gradient_clipping': 1.0,
         'label_smoothing': 0.1,
     }
-
-
-def get_experiment_config(experiment_name: str) -> Dict[str, Any]:
-    """
-    Returns the configuration for a specific ablation study experiment.
-    """
-    base_config = get_enhanced_toxd4c_config()
-    
-    # Deepcopy to avoid modifying the base config
-    config = copy.deepcopy(base_config)
-
-    if experiment_name == 'full_model':
-        # After extensive testing, gnn_transformer_3d proved to be the best architecture.
-        # This final 'full_model' configuration IS the gnn_transformer_3d configuration,
-        # to be run with the improved ReduceLROnPlateau scheduler for potentially even better results.
-        config['use_geometric_encoder'] = True
-        config['use_hybrid_architecture'] = True
-        
-        config['use_fingerprints'] = False
-        config['use_hierarchical_encoder'] = False
-        config['use_contrastive_learning'] = False
-        config['uncertainty_weighting'] = False
-    
-    elif experiment_name == 'gnn_only':
-        # Baseline: A simple GCN model.
-        config['use_hybrid_architecture'] = False
-        config['use_geometric_encoder'] = False
-        config['use_hierarchical_encoder'] = False
-        config['use_fingerprints'] = False
-        config['use_contrastive_learning'] = False
-        config['uncertainty_weighting'] = False
-
-    elif experiment_name == 'gnn_transformer':
-        # GNN-Transformer hybrid without other enhancements.
-        config['use_geometric_encoder'] = False
-        config['use_hierarchical_encoder'] = False
-        config['use_fingerprints'] = False
-        config['use_contrastive_learning'] = False
-        config['uncertainty_weighting'] = False
-
-    elif experiment_name == 'gnn_transformer_fp':
-        # Hybrid model + Fingerprints.
-        config['use_geometric_encoder'] = False
-        config['use_hierarchical_encoder'] = False
-        config['use_contrastive_learning'] = False
-        config['uncertainty_weighting'] = False
-
-    elif experiment_name == 'gnn_transformer_3d':
-        # Hybrid model + 3D geometric info.
-        config['use_fingerprints'] = False
-        config['use_hierarchical_encoder'] = False
-        config['use_contrastive_learning'] = False
-        config['uncertainty_weighting'] = False
-
-    elif experiment_name == 'full_minus_contrastive':
-        # Full model without supervised contrastive learning.
-        config['use_contrastive_learning'] = False
-        
-    else:
-        raise ValueError(f"Unknown experiment name: {experiment_name}")
-        
-    return config
 
 
 DATASET_SPLITS = {

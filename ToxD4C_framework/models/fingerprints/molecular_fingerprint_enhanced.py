@@ -231,9 +231,9 @@ class MolecularFingerprintModule(nn.Module):
         
         return tensor_fingerprints
     
-    def forward(self,
+    def forward(self, 
                 fingerprints: Optional[Dict[str, torch.Tensor]] = None,
-                smiles: Optional[List[str]] = None) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+                smiles: Optional[List[str]] = None) -> torch.Tensor:
         if fingerprints is None and smiles is not None:
             fingerprints = self.calculate_fingerprints_from_smiles(smiles)
         elif fingerprints is None:
@@ -255,7 +255,6 @@ class MolecularFingerprintModule(nn.Module):
         if not encoded_fingerprints:
             raise ValueError("No valid fingerprint features found.")
         
-        attention_weights = None
         if self.use_attention_fusion and len(encoded_fingerprints) > 1:
             concatenated_fps = torch.cat(encoded_fingerprints, dim=-1)
             
@@ -276,7 +275,7 @@ class MolecularFingerprintModule(nn.Module):
             concatenated_fps = torch.cat(encoded_fingerprints, dim=-1)
             final_features = self.feature_fusion(concatenated_fps)
         
-        return final_features, attention_weights
+        return final_features
     
     def get_fingerprint_importance(self, 
                                  fingerprints: Dict[str, torch.Tensor]) -> Dict[str, float]:

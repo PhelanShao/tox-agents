@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API连接调试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 3px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 ToxD4C API 连接调试</h1>
+        
+        <div class="test-section">
+            <h3>1. 后端健康检查</h3>
+            <button onclick="testHealth()">测试健康状态</button>
+            <div id="health-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. ToxD4C 模型信息</h3>
+            <button onclick="testToxD4CInfo()">获取模型信息</button>
+            <div id="info-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. SMILES 预测测试</h3>
+            <textarea id="smiles-input" placeholder="输入SMILES字符串，例如：CC(=O)OC1=CC=CC=C1C(=O)O">CC(=O)OC1=CC=CC=C1C(=O)O</textarea>
+            <br>
+            <button onclick="testSmilesPredict()">测试SMILES预测</button>
+            <div id="smiles-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 网络连接信息</h3>
+            <p>当前页面地址: <span id="current-url"></span></p>
+            <p>API 基础地址: <span id="api-base"></span></p>
+            <button onclick="showNetworkInfo()">显示网络信息</button>
+            <div id="network-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('api-base').textContent = API_BASE;
+
+        async function makeRequest(url, options = {}) {
+            try {
+                console.log('请求:', url, options);
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        ...options.headers,
+                    }
+                });
+                
+                console.log('响应状态:', response.status);
+                
+                const data = await response.json();
+                console.log('响应数据:', data);
+                
+                return { success: true, status: response.status, data };
+            } catch (error) {
+                console.error('请求错误:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        function showResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            const isSuccess = result.success && (result.status === 200 || result.data?.success);
+            
+            element.innerHTML = `
+                <div class="result ${isSuccess ? 'success' : 'error'}">
+                    <strong>${isSuccess ? '✅ 成功' : '❌ 失败'}</strong>
+                    ${result.status ? `<br>状态码: ${result.status}` : ''}
+                    ${result.error ? `<br>错误: ${result.error}` : ''}
+                </div>
+                <pre>${JSON.stringify(result.data || result, null, 2)}</pre>
+            `;
+        }
+
+        async function testHealth() {
+            const result = await makeRequest(`${API_BASE}/health`);
+            showResult('health-result', result);
+        }
+
+        async function testToxD4CInfo() {
+            const result = await makeRequest(`${API_BASE}/api/toxd4c/info`);
+            showResult('info-result', result);
+        }
+
+        async function testSmilesPredict() {
+            const smilesInput = document.getElementById('smiles-input').value.trim();
+            if (!smilesInput) {
+                alert('请输入SMILES字符串');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('smiles_input', smilesInput);
+
+            const result = await makeRequest(`${API_BASE}/api/toxd4c/predict/smiles`, {
+                method: 'POST',
+                body: formData
+            });
+            showResult('smiles-result', result);
+        }
+
+        function showNetworkInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                location: window.location.href,
+                protocol: window.location.protocol,
+                hostname: window.location.hostname,
+                port: window.location.port,
+                apiBase: API_BASE,
+                timestamp: new Date().toISOString()
+            };
+            
+            document.getElementById('network-result').innerHTML = `
+                <div class="result success">
+                    <strong>网络信息</strong>
+                </div>
+                <pre>${JSON.stringify(info, null, 2)}</pre>
+            `;
+        }
+
+        // 页面加载时自动测试连接
+        window.onload = function() {
+            setTimeout(() => {
+                testHealth();
+            }, 1000);
+        };
+    </script>
+</body>
+</html> 

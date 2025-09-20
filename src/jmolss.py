@@ -150,7 +150,7 @@ def generate_color_legend(elements):
         return ""
     
     legend_html = '<div style="padding: 10px; background-color: #f5f5f5; border-radius: 5px; margin-top: 10px;">'
-    legend_html += '<div style="font-weight: bold; margin-bottom: 10px;">原子类型颜色图例：</div>'
+    legend_html += '<div style="font-weight: bold; margin-bottom: 10px;">Element：</div>'
     legend_html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px;">'
     
     for elem in elements:
@@ -263,7 +263,7 @@ def generate_color_legend(elements):
         return ""
     
     legend_html = '<div style="padding: 10px; background-color: #f5f5f5; border-radius: 5px; margin-top: 10px;">'
-    legend_html += '<div style="font-weight: bold; margin-bottom: 10px;">原子类型颜色图例：</div>'
+    legend_html += '<div style="font-weight: bold; margin-bottom: 10px;">Element：</div>'
     legend_html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px;">'
     
     for elem in elements:

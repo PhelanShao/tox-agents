@@ -1,0 +1,44 @@
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function POST(request: NextRequest) {
+  try {
+    // 获取表单数据
+    const formData = await request.formData()
+    
+    // 转发到后端API
+    const backendResponse = await fetch('http://localhost:8000/api/predict/property', {
+      method: 'POST',
+      body: formData,
+      // 设置较长的超时时间
+      signal: AbortSignal.timeout(120000), // 120秒
+    })
+
+    if (!backendResponse.ok) {
+      throw new Error(`Backend API error: ${backendResponse.status}`)
+    }
+
+    const data = await backendResponse.json()
+    
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('Property prediction API error:', error)
+    
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: '预测请求超时，请稍后重试' 
+        },
+        { status: 408 }
+      )
+    }
+    
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: error instanceof Error ? error.message : '属性预测失败' 
+      },
+      { status: 500 }
+    )
+  }
+}

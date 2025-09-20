@@ -6,6 +6,7 @@ import numpy as np
 import math
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import to_dense_adj, to_dense_batch
+from .gcn_stack import GCNStack
 
 class GATLayer(nn.Module):
     def __init__(self,
@@ -197,7 +198,7 @@ class DynamicFusionModule(nn.Module):
     def forward(self,
                 gnn_features: torch.Tensor,
                 transformer_features: torch.Tensor,
-                node_mask: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+                node_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         combined_features = torch.cat([gnn_features, transformer_features], dim=-1)
         fusion_weights = self.weight_generator(combined_features)
         
@@ -214,7 +215,7 @@ class DynamicFusionModule(nn.Module):
         gnn_weight = fusion_weights[..., 0:1]
         transformer_weight = fusion_weights[..., 1:2]
         
-        fused_features = (gnn_weight * enhanced_gnn +
+        fused_features = (gnn_weight * enhanced_gnn + 
                          transformer_weight * enhanced_transformer)
         
         enhanced_features = self.feature_enhance(fused_features)
@@ -224,7 +225,7 @@ class DynamicFusionModule(nn.Module):
         if node_mask is not None:
             output = output * node_mask.unsqueeze(-1)
         
-        return output, fusion_weights
+        return output
 
 
 class GNNTransformerHybrid(nn.Module):
@@ -237,21 +238,37 @@ class GNNTransformerHybrid(nn.Module):
                  num_heads: int = 8,
                  dropout: float = 0.1,
                  max_seq_len: int = 512,
-                 use_dynamic_fusion: bool = True):
+                 use_dynamic_fusion: bool = True,
+                 gnn_backbone: str = 'graph_attention'):
         super().__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
         self.use_dynamic_fusion = use_dynamic_fusion
-        
-        self.gnn_branch = GraphAttentionNetwork(
-            input_dim=input_dim,
-            hidden_dim=hidden_dim,
-            output_dim=hidden_dim,
-            num_heads=num_heads,
-            num_layers=gnn_layers,
-            dropout=dropout
-        )
+        self.gnn_backbone = gnn_backbone
+
+        # 选择 GNN 分支实现
+        if gnn_backbone == 'pyg_gcn_stack':
+            # 使用标准 GCNConv 残差+LayerNorm 堆叠
+            self.gnn_branch = GCNStack(
+                in_channels=input_dim,
+                hidden_dim=hidden_dim,
+                num_layers=gnn_layers,
+                dropout=dropout,
+                use_residual=True,
+            )
+            self.use_dense_output_from_gnn = True
+        else:
+            # 默认使用现有的 GraphAttentionNetwork（注意当前实现为消息聚合风格）
+            self.gnn_branch = GraphAttentionNetwork(
+                input_dim=input_dim,
+                hidden_dim=hidden_dim,
+                output_dim=hidden_dim,
+                num_heads=num_heads,
+                num_layers=gnn_layers,
+                dropout=dropout
+            )
+            self.use_dense_output_from_gnn = False
         
         self.transformer_branch = MolecularTransformer(
             input_dim=input_dim,
@@ -290,18 +307,24 @@ class GNNTransformerHybrid(nn.Module):
             batch_first=True
         )
         
-    def forward(self, x, edge_index, batch) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
-        gnn_features = self.gnn_branch(x, edge_index, batch)
-        
-        dense_x, node_mask = to_dense_batch(x, batch)
+    def forward(self, x, edge_index, batch) -> Tuple[torch.Tensor, torch.Tensor]:
+        # GNN 分支输出
+        if self.gnn_backbone == 'pyg_gcn_stack':
+            node_repr = self.gnn_branch(x, edge_index)  # [num_nodes, hidden_dim]
+            gnn_features, node_mask = to_dense_batch(node_repr, batch)  # [B, N, H], [B, N]
+            # Transformer 分支需要稠密化后的原始节点特征作为输入
+            dense_x, _ = to_dense_batch(x, batch)
+        else:
+            gnn_features = self.gnn_branch(x, edge_index, batch)  # [B, N, H]
+            dense_x, node_mask = to_dense_batch(x, batch)
+
         transformer_features = self.transformer_branch(
             node_features=dense_x,
             attention_mask=node_mask
         )
         
-        fusion_weights = None
         if self.use_dynamic_fusion:
-            fused_features, fusion_weights = self.fusion_module(
+            fused_features = self.fusion_module(
                 gnn_features, transformer_features, node_mask
             )
         else:
@@ -325,12 +348,7 @@ class GNNTransformerHybrid(nn.Module):
         else:
             molecule_repr = global_repr.mean(dim=1)
             
-        interp_data = {
-            'attention_weights': attention_weights,
-            'fusion_weights': fusion_weights
-        }
-        
-        return molecule_repr, interp_data
+        return molecule_repr, attention_weights
 
 
 if __name__ == "__main__":

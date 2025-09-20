@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分子序列导航测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .slider-container {
+            margin: 20px 0;
+        }
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            border: none;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .property-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .property-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+        .property-name {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        .property-value {
+            font-size: 1.2em;
+            color: #212529;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 分子序列导航测试</h1>
+        <p>这个页面用于测试分子序列导航拖动条的功能修复。</p>
+        
+        <div class="info">
+            <h3>修复内容：</h3>
+            <ul>
+                <li>✅ 分子序列导航拖动条现在会在属性预测任务中显示</li>
+                <li>✅ 拖动条变化时，下面的数据会实时刷新</li>
+                <li>✅ 分子可视化会根据当前分子索引更新</li>
+                <li>✅ 属性数据会根据当前选择的分子显示</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🎛️ 分子序列导航模拟</h2>
+        
+        <div class="controls">
+            <button onclick="previousMolecule()">◀ 上一个</button>
+            <span id="moleculeInfo">分子 1 / 5</span>
+            <button onclick="nextMolecule()">下一个 ▶</button>
+            <button onclick="toggleAutoPlay()" id="autoPlayBtn">▶ 自动播放</button>
+        </div>
+        
+        <div class="slider-container">
+            <input type="range" min="0" max="4" value="0" class="slider" id="moleculeSlider" oninput="updateMolecule(this.value)">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #666; margin-top: 5px;">
+                <span>1</span>
+                <span>5</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔬 当前分子属性</h2>
+        <div id="currentMolecule" class="info">
+            <strong>分子 1</strong> - 显示当前选择分子的属性
+        </div>
+        
+        <div class="property-grid" id="propertyGrid">
+            <!-- 属性卡片将通过JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 二元分类结果</h2>
+        <div id="binaryResult" class="info">
+            <!-- 二元分类结果将通过JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <script>
+        let currentMoleculeIndex = 0;
+        let totalMolecules = 5;
+        let isAutoPlay = false;
+        let autoPlayInterval = null;
+
+        // 模拟的分子数据
+        const moleculeData = [
+            {
+                properties: [
+                    { name: "分子量", value: 180.16, unit: "g/mol" },
+                    { name: "LogP", value: 2.34, unit: "" },
+                    { name: "极性表面积", value: 46.53, unit: "Ų" },
+                    { name: "氢键供体", value: 1, unit: "" },
+                    { name: "氢键受体", value: 2, unit: "" },
+                    { name: "可旋转键", value: 3, unit: "" }
+                ],
+                binary: { prediction: 0, probability: 0.23, confidence: "high" }
+            },
+            {
+                properties: [
+                    { name: "分子量", value: 194.19, unit: "g/mol" },
+                    { name: "LogP", value: 3.12, unit: "" },
+                    { name: "极性表面积", value: 52.60, unit: "Ų" },
+                    { name: "氢键供体", value: 2, unit: "" },
+                    { name: "氢键受体", value: 3, unit: "" },
+                    { name: "可旋转键", value: 4, unit: "" }
+                ],
+                binary: { prediction: 1, probability: 0.87, confidence: "high" }
+            },
+            {
+                properties: [
+                    { name: "分子量", value: 156.14, unit: "g/mol" },
+                    { name: "LogP", value: 1.89, unit: "" },
+                    { name: "极性表面积", value: 38.77, unit: "Ų" },
+                    { name: "氢键供体", value: 0, unit: "" },
+                    { name: "氢键受体", value: 2, unit: "" },
+                    { name: "可旋转键", value: 2, unit: "" }
+                ],
+                binary: { prediction: 0, probability: 0.15, confidence: "high" }
+            },
+            {
+                properties: [
+                    { name: "分子量", value: 220.22, unit: "g/mol" },
+                    { name: "LogP", value: 4.56, unit: "" },
+                    { name: "极性表面积", value: 65.18, unit: "Ų" },
+                    { name: "氢键供体", value: 3, unit: "" },
+                    { name: "氢键受体", value: 4, unit: "" },
+                    { name: "可旋转键", value: 6, unit: "" }
+                ],
+                binary: { prediction: 1, probability: 0.92, confidence: "high" }
+            },
+            {
+                properties: [
+                    { name: "分子量", value: 142.11, unit: "g/mol" },
+                    { name: "LogP", value: 1.23, unit: "" },
+                    { name: "极性表面积", value: 29.54, unit: "Ų" },
+                    { name: "氢键供体", value: 1, unit: "" },
+                    { name: "氢键受体", value: 1, unit: "" },
+                    { name: "可旋转键", value: 1, unit: "" }
+                ],
+                binary: { prediction: 0, probability: 0.08, confidence: "high" }
+            }
+        ];
+
+        function updateMolecule(index) {
+            currentMoleculeIndex = parseInt(index);
+            updateDisplay();
+        }
+
+        function previousMolecule() {
+            currentMoleculeIndex = currentMoleculeIndex > 0 ? currentMoleculeIndex - 1 : totalMolecules - 1;
+            updateDisplay();
+        }
+
+        function nextMolecule() {
+            currentMoleculeIndex = (currentMoleculeIndex + 1) % totalMolecules;
+            updateDisplay();
+        }
+
+        function toggleAutoPlay() {
+            isAutoPlay = !isAutoPlay;
+            const btn = document.getElementById('autoPlayBtn');
+            
+            if (isAutoPlay) {
+                btn.textContent = '⏸ 暂停';
+                autoPlayInterval = setInterval(() => {
+                    nextMolecule();
+                }, 2000);
+            } else {
+                btn.textContent = '▶ 自动播放';
+                if (autoPlayInterval) {
+                    clearInterval(autoPlayInterval);
+                    autoPlayInterval = null;
+                }
+            }
+        }
+
+        function updateDisplay() {
+            // 更新滑动条
+            document.getElementById('moleculeSlider').value = currentMoleculeIndex;
+            
+            // 更新分子信息
+            document.getElementById('moleculeInfo').textContent = `分子 ${currentMoleculeIndex + 1} / ${totalMolecules}`;
+            document.getElementById('currentMolecule').innerHTML = `<strong>分子 ${currentMoleculeIndex + 1}</strong> - 显示当前选择分子的属性`;
+            
+            // 更新属性网格
+            const propertyGrid = document.getElementById('propertyGrid');
+            const currentData = moleculeData[currentMoleculeIndex];
+            
+            propertyGrid.innerHTML = '';
+            currentData.properties.forEach(prop => {
+                const card = document.createElement('div');
+                card.className = 'property-card';
+                card.innerHTML = `
+                    <div class="property-name">${prop.name}</div>
+                    <div class="property-value">${prop.value}${prop.unit ? ' ' + prop.unit : ''}</div>
+                `;
+                propertyGrid.appendChild(card);
+            });
+            
+            // 更新二元分类结果
+            const binaryResult = document.getElementById('binaryResult');
+            const binary = currentData.binary;
+            const toxicityText = binary.prediction === 1 ? '有毒' : '无毒';
+            const probabilityPercent = (binary.probability * 100).toFixed(1);
+            
+            binaryResult.innerHTML = `
+                <h4>预测结果: ${toxicityText}</h4>
+                <p>毒性概率: ${probabilityPercent}%</p>
+                <p>置信度: ${binary.confidence}</p>
+                <div style="background: linear-gradient(to right, green ${100-binary.probability*100}%, red ${binary.probability*100}%); height: 20px; border-radius: 10px; margin: 10px 0;"></div>
+            `;
+        }
+
+        // 初始化显示
+        updateDisplay();
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') {
+                previousMolecule();
+            } else if (e.key === 'ArrowRight') {
+                nextMolecule();
+            } else if (e.key === ' ') {
+                e.preventDefault();
+                toggleAutoPlay();
+            }
+        });
+    </script>
+</body>
+</html>

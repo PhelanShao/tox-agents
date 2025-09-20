@@ -35,7 +35,9 @@ def preprocess_lmdb(input_db_path: str, output_db_path: str, max_atoms: int):
     feature_extractor = MolecularFeatureExtractor()
 
     # Open input and output LMDB environments
-    in_env = lmdb.open(input_db_path, subdir=False, readonly=True, lock=False, readahead=False, meminit=False)
+    # Autodetect LMDB layout: file-backed (subdir=False) vs directory (subdir=True)
+    subdir_flag = os.path.isdir(input_db_path)
+    in_env = lmdb.open(input_db_path, subdir=subdir_flag, readonly=True, lock=False, readahead=False, meminit=False)
     # Set a large map_size for the output DB to avoid "MapFullError"
     map_size = 1024 * 1024 * 1024 * 50  # 50 GB
     out_env = lmdb.open(output_db_path, map_size=map_size)
@@ -102,8 +104,8 @@ def preprocess_lmdb(input_db_path: str, output_db_path: str, max_atoms: int):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Preprocess raw LMDB data for faster training.')
-    parser.add_argument('--data_dir', type=str, default='data/dataset', help='Directory containing the raw LMDB files (train.lmdb, valid.lmdb, test.lmdb).')
-    parser.add_argument('--output_dir', type=str, default='data/processed', help='Directory to save the processed LMDB files.')
+    parser.add_argument('--data_dir', type=str, default='data/data/dataset', help='Directory containing the raw LMDB files (train.lmdb, valid.lmdb, test.lmdb).')
+    parser.add_argument('--output_dir', type=str, default='data/data/processed', help='Directory to save the processed LMDB files.')
     parser.add_argument('--max_atoms', type=int, default=64, help='Maximum number of atoms to include per molecule.')
     
     args = parser.parse_args()

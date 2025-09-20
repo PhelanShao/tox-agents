@@ -1,14 +1,15 @@
+# /mnt/backup2/ai4s/backupunimolpy/interface.py
 import os
 import io
 import json
 import logging
-# import gradio as gr # Removed Gradio
+import gradio as gr
 import tempfile
 import shutil
 import zipfile
-import base64 # Added for process_export_for_chat if we keep it
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from chatbot import ChatInterface
 from predictor import BinaryPredictor
 from MoleculePredictor import MoleculePredictor
@@ -23,6 +24,17 @@ from visualizer import (
 )
 from probability_plot import create_probability_plot
 
+BASE_DIR = Path(__file__).resolve().parent
+
+
+def resolve_path(path: str) -> str:
+    """Resolve relative paths against the bundle root."""
+    path_obj = Path(path).expanduser()
+    if not path_obj.is_absolute():
+        path_obj = (BASE_DIR / path_obj).resolve()
+    return str(path_obj)
+
+# Configure logging
 log_stream = io.StringIO()
 logging.basicConfig(
     level=logging.INFO,
@@ -38,248 +50,224 @@ class CombinedInterface:
     def __init__(self):
         self.chat_interface = ChatInterface()
         
-    # This method seems specific to a Gradio-based chat interaction flow
-    # and is not directly used by the FastAPI backend.
-    # It might need to be adapted or removed if not used by any backend logic.
-    # For now, commenting it out to ensure no Gradio dependencies are hidden here.
-    # def process_export_for_chat(self, export_path, export_data):
-    #     # ... (implementation uses self.chat_interface.memory which might be Gradio specific)
-    #     pass
+    def process_export_for_chat(self, export_path, export_data):
+        """Process exported files and send to chat"""
+        if not export_path or not export_data:
+            return None, "Export failed"
+            
+        try:
+            # Read the JSON data
+            with open(export_data.name, 'r') as f:
+                json_data = json.load(f)
+            
+            # Create the prompt with JSON context
+            json_prompt = ("你是一名专业的结构化学家、生物学家，现在你得到了一个分子的有关数据，"
+                         "我用模型预测它具有毒性的概率是probability，这个值0是无毒、1是有毒，"
+                         "property_prediction是全部这个分子的预测参数，请你根据最深刻的化学知识，"
+                         "写一份500字以上的分子分析报告，使用直接回答的方式。" + 
+                         json.dumps(json_data, ensure_ascii=False))
+            
+            # Read the image file
+            with open(export_path.name, 'rb') as f:
+                image_data = f.read()
+            
+            # Convert image to base64
+            image_base64 = base64.b64encode(image_data).decode('utf-8')
+            
+            # Send to chat
+            message_content = [
+                {"type": "text", "text": json_prompt},
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_base64}"}}
+            ]
+            
+            # Add to chat memory but make JSON invisible
+            self.chat_interface.memory.add_message("user", message_content, has_image=True)
+            
+            # Process the message through chat interface
+            history, error = self.chat_interface.process_message(
+                json_prompt,
+                export_path.name,
+                True,
+                self.chat_interface.memory.get_display_history(),
+                "anthropic/claude-3.5-sonnet"
+            )
+            
+            return history, error
+            
+        except Exception as e:
+            return None, f"Error processing export: {str(e)}"
 
-# xyz_file_path is a string path to the file saved by FastAPI
-def convert_xyz_to_npz(xyz_file_path: str):
-    if not xyz_file_path or not os.path.exists(xyz_file_path):
-        # Return format for FastAPI: tuple (error_message_or_None, result_path_or_None)
-        # Consistent with process_property_prediction's success return.
-        # However, the API endpoint for this expects FileResponse or HTTPException.
-        # The functions here should probably raise exceptions on error, or return paths for success.
-        # Let's make it return just the output path, and raise Exception on failure.
-        raise ValueError("XYZ file path is missing or does not exist.")
+def convert_xyz_to_npz(xyz_file):
+    """Convert XYZ file to NPZ format"""
+    if not xyz_file:
+        return "Error: No file uploaded", None
         
     try:
-        # The original function saved the file again, but FastAPI already saved it.
-        # We can use xyz_file_path directly.
-        # Create a temporary directory for any intermediate files if needed by read_xyz_file or save_npz
+        # Create a temporary directory
         with tempfile.TemporaryDirectory() as temp_dir:
-            # If read_xyz_file or save_npz need the file in temp_dir with a specific name, copy it.
-            # For now, assume they can work with the direct path or handle paths appropriately.
+            # Read the uploaded file in binary mode
+            with open(xyz_file.name, 'rb') as f:
+                content = f.read()
             
-            # Original code used xyz_file.name, now we use xyz_file_path
-            # temp_xyz = os.path.join(temp_dir, "temp.xyz") # This was a copy of the input
-            # For now, directly use xyz_file_path assuming read_xyz_file can handle it.
-            data_dict, invalid_frames = read_xyz_file(xyz_file_path)
+            # Save to temp file in binary mode
+            temp_xyz = os.path.join(temp_dir, "temp.xyz")
+            with open(temp_xyz, 'wb') as f:
+                f.write(content)
             
-            # Output file should be in a place accessible for FileResponse, or UPLOAD_DIR
-            # Let's make it save to a temp file and return its path. The API endpoint will move/serve it.
-            # Or, better, let it save to UPLOAD_DIR if that's the convention.
-            # For now, save it in temp_dir and return path. API will copy it to UPLOAD_DIR if needed or serve from there.
-            # The API currently expects this function to return the final path directly.
-            # So this function should probably take an output_dir argument or save to a predictable place.
-            # Let's have it create a file in a temp dir, and the API will handle it.
-            # The API endpoint for xyz_to_npz doesn't specify an output_dir for this function.
-            # It expects the function to return a path that it can then serve.
+            # Read and process data
+            data_dict, invalid_frames = read_xyz_file(temp_xyz)
             
-            # Let's save it with a unique name in a temporary fashion that the calling API can then handle.
-            base_name = os.path.splitext(os.path.basename(xyz_file_path))[0]
-            output_file_name = f"{base_name}_converted.npz"
-            # Saving to current working directory, as original function did with shutil.copy2
-            # This is not ideal for an API. It should save to UPLOAD_DIR or a dedicated output dir.
-            # For now, let's stick to the function's apparent original behavior of creating in CWD,
-            # and the API layer is responsible for cleanup or moving.
-            # The FastAPI endpoint does not cleanup this returned path, it serves it then forgets it.
-            # The caller of the API (frontend) downloads it.
-            # The frontend XYZtoNPZConverter expects a file named based on original, e.g. "input.npz"
+            # Create output filename in temp directory
+            output_file = os.path.join(temp_dir, "converted_sequential.npz")
             
-            # The original code saved to temp_dir then copied to CWD.
-            # Let's simplify: save directly to a temporary file, return its path.
-            # The API endpoint should then ensure this file is cleaned up after response.
-            # For now, this function will create it, and it's up to API to manage.
+            # Save to NPZ
+            info = save_npz(data_dict, output_file)
             
-            # Let's create the output file in a temporary manner.
-            # The API endpoint is responsible for sending it and then cleaning it up.
-            # This function should just return the path to the generated NPZ.
-            # The original function returned a path to CWD.
-            final_output_path = os.path.join(os.getcwd(), output_file_name) # Save to CWD
-
-            info = save_npz(data_dict, final_output_path) # save_npz returns a string summary
+            # Add summary information
+            summary = [
+                "\nProcessing Report:",
+                "-" * 50,
+                f"Total frames processed: {len(data_dict['id'])}",
+                f"Invalid frames: {len(invalid_frames)}",
+                "-" * 50
+            ]
             
-            # The API endpoint expects to return this path using FileResponse.
-            # The summary/info string is lost in current API design.
-            # We should return only the path.
-            return final_output_path
+            # Create a copy of the output file that will survive the temp directory cleanup
+            final_output = os.path.join(os.getcwd(), "converted_sequential.npz")
+            shutil.copy2(output_file, final_output)
+            
+            return "\n".join([info] + summary), final_output
             
     except Exception as e:
-        # Log the error for server-side records
-        logger.error(f"Error during XYZ to NPZ conversion: {str(e)}")
-        # Re-raise for the API to catch and turn into HTTPException
-        raise RuntimeError(f"Error during conversion: {str(e)}")
+        return f"Error during conversion: {str(e)}", None
 
-
-# npz_file_path is a string path
-def convert_npz_to_xyz(npz_file_path: str):
-    if not npz_file_path or not os.path.exists(npz_file_path):
-        raise ValueError("NPZ file path is missing or does not exist.")
+def convert_npz_to_xyz(npz_file):
+    """Convert NPZ file to XYZ format"""
+    if not npz_file:
+        return "Error: No file uploaded", None
         
     try:
-        # Output file name based on the input, saved in CWD.
-        output_file_name = os.path.splitext(os.path.basename(npz_file_path))[0] + "_converted.xyz"
-        output_file_path = os.path.join(os.getcwd(), output_file_name)
-
-        converter = NPZToXYZ(npz_file_path) # NPZToXYZ expects a path string
-        result_message = converter.convert(output_file_path) # convert writes to output_file_path
+        # Create output filename
+        output_file = os.path.splitext(npz_file.name)[0] + "_converted.xyz"
         
-        # result_message from converter.convert is a success/info string.
-        # The API endpoint needs only the path.
-        return output_file_path
+        # Convert file
+        converter = NPZToXYZ(npz_file.name)
+        result = converter.convert(output_file)
+        
+        return result, output_file
     except Exception as e:
-        logger.error(f"Error during NPZ to XYZ conversion: {str(e)}")
-        raise RuntimeError(f"Error during conversion: {str(e)}")
+        return f"Error during conversion: {str(e)}", None
 
-# file_path is a string path. output_dir is where results (image, legend) should be saved.
-def process_molecule_visualization(file_path: str, frame_index: int, representation: str, rotations: list, zoom: float, output_dir: str):
-    if not file_path or not os.path.exists(file_path):
-        # API expects (image_path, legend_path) or raises HTTPException
-        # This function should raise error if file is missing.
-        raise ValueError("Visualization file path is missing or does not exist.")
+def process_molecule_visualization(file, frame_index, representation, rotation_x, rotation_y, rotation_z, zoom):
+    """处理分子可视化"""
+    if file is None:
+        return None, "", gr.Slider(visible=False), None
     
-    # Ensure output_dir exists (API layer does this in current code)
-    # os.makedirs(output_dir, exist_ok=True) # Not needed if API creates it
-
-    # display_molecule_pymol is from visualizer.py
-    # It's expected to save image and legend to output_dir and return their paths and total_frames
-    img_path, legend_text_path, total_frames = display_molecule_pymol(
-        file_path=file_path, # visualizer.py expects a path string
+    img, legend, total_frames = display_molecule_pymol(
+        file_path=file.name,
         frame_index=frame_index,
         representation=representation,
-        rotations=rotations, # expects a list/tuple of 3 floats
-        zoom=zoom,
-        output_dir=output_dir # visualizer.py needs this to save files
+        rotations=[rotation_x, rotation_y, rotation_z],
+        zoom=zoom
     )
     
-    # The API endpoint /api/v1/visualize/molecule expects this function to return (image_path, legend_path)
-    # total_frames is not used by that specific API endpoint directly, but good to have.
-    # The Gradio UI used total_frames to update a slider. React frontend handles frame input differently.
-    return img_path, legend_text_path # total_frames is implicitly ignored by API caller
+    # 更新帧滑块的范围
+    if total_frames > 0:
+        return img, legend, gr.Slider(minimum=0, maximum=total_frames-1, step=1, visible=True), img
+    else:
+        return img, legend, gr.Slider(visible=False), img
 
-# file_path is a string path. model_path and reference_path are also paths.
-# output_dir is where prediction CSV should be saved.
-def process_binary_prediction(file_path: str, model_path: str, output_dir: str):
-    if not file_path or not os.path.exists(file_path):
-        raise ValueError("Binary prediction input file path is missing or does not exist.")
+def process_binary_prediction(file, model_path="models/unimol7300"):
+    """Process uploaded file and return binary predictions"""
+    if not file:
+        return None, "Error: No file uploaded"
     
     try:
-        predictor = BinaryPredictor(model_base_dir=model_path) # Assumes model_path is base dir for model files
-        # Output path for the CSV, should be in output_dir
-        output_csv_filename = os.path.splitext(os.path.basename(file_path))[0] + '_binary_predictions.csv'
-        output_csv_path = os.path.join(output_dir, output_csv_filename)
-
-        predictions_df = predictor.predict(file_path, output_csv_path) # predict should save to output_csv_path and return df
+        model_path = resolve_path(model_path)
+        predictor = BinaryPredictor(model_base_dir=model_path)
+        output_path = file.name.replace('.npz', '_predictions.csv')
+        predictions = predictor.predict(file.name, output_path)
         
-        # Post-processing of probabilities (already in your Gradio version)
-        probabilities = predictions_df['probability'].values
-        if np.max(probabilities) > 1 or np.min(probabilities) < 0: # Normalize if not in [0,1]
+        # 确保概率值在0-1范围内
+        probabilities = predictions['probability'].values
+        if np.max(probabilities) > 1 or np.min(probabilities) < 0:
+            # 如果概率值不在0-1范围内，进行归一化
             probabilities = (probabilities - np.min(probabilities)) / (np.max(probabilities) - np.min(probabilities))
-            predictions_df['probability'] = probabilities
-            predictions_df['prediction'] = (probabilities > 0.5).astype(int)
-            predictions_df.to_csv(output_csv_path, index=False) # Save updated DataFrame
+            # 更新预测结果
+            predictions['probability'] = probabilities
+            predictions['prediction'] = (probabilities > 0.5).astype(int)
+            # 保存更新后的预测结果
+            predictions.to_csv(output_path, index=False)
         
-        # The API endpoint /api/v1/predict/binary expects (fig, result_text, output_file_path)
-        # This function currently returns (output_path, log_messages string)
-        # The fig is None, result_text can be the log_messages.
-        # Let's align: return (None, log_messages_string, output_csv_path)
         log_messages = [
-            f"Predictions: +{(predictions_df['prediction'] == 1).sum()}, -{(predictions_df['prediction'] == 0).sum()}",
+            f"Predictions: +{(predictions['prediction'] == 1).sum()}, -{(predictions['prediction'] == 0).sum()}",
             f"Probability range: {probabilities.min():.3f} - {probabilities.max():.3f}"
         ]
         
-        return None, "\n".join(log_messages), output_csv_path
+        return output_path, "\n".join(log_messages)
     except Exception as e:
-        logger.error(f"Error in process_binary_prediction: {str(e)}")
-        raise RuntimeError(f"Error during binary prediction: {str(e)}")
+        return None, f"Error: {str(e)}"
 
-# file_path, reference_path, model_path are string paths.
-# output_dir is where prediction CSV should be saved.
-def process_property_prediction(file_path: str, model_path: str, reference_path: str, output_dir: str):
-    if not all([file_path, model_path, reference_path]): # Add os.path.exists checks if necessary
-        raise ValueError("Missing inputs for property prediction.")
-    if not os.path.exists(file_path) or not os.path.exists(reference_path): # Model path might be a dir, harder to check simply
-        raise ValueError("Input file or reference NPZ file does not exist.")
-
+def process_property_prediction(file, model_path, reference_path):
+    """Process property predictions"""
+    if not file or not model_path or not reference_path:
+        return None, "Error: Missing inputs"
     try:
-        predictor = MoleculePredictor() # Assumes this class is defined and works
-        # The predict method of MoleculePredictor should save its output CSV into output_dir
-        # and return the path to it, along with any message.
-        output_csv_path, message = predictor.predict(file_path, reference_path, model_path, output_dir=output_dir)
-        
-        # The API endpoint /api/v1/predict/property expects (fig, result_text, output_file_path)
-        # This function returns (output_file, message)
-        # Let's align: return (None, message, output_csv_path)
-        return None, message, output_csv_path
+        model_path = resolve_path(model_path)
+        reference_path = resolve_path(reference_path)
+        predictor = MoleculePredictor()
+        output_file, message = predictor.predict(file.name, reference_path, model_path)
+        return output_file, message
     except Exception as e:
-        logger.error(f"Error in process_property_prediction: {str(e)}")
-        raise RuntimeError(f"Error during property prediction: {str(e)}")
+        return None, f"Error: {str(e)}"
 
-# current_image_path is a string path. other pred_file_paths are also paths.
-# output_dir is where the new image and json should be saved.
-def export_frame_data(current_image_path: str, output_format: str, frame_index: int, 
-                        binary_pred_file_path: Optional[str], property_pred_file_path: Optional[str], 
-                        output_dir: str):
-    if not current_image_path or not os.path.exists(current_image_path):
-        raise ValueError("Current image path for export is missing or does not exist.")
-
+def export_frame_data(current_image, export_format, frame_index, binary_pred_file, property_pred_file):
+    """Export current frame image and corresponding data"""
     try:
-        # Ensure output_dir exists (API layer does this)
-        # os.makedirs(output_dir, exist_ok=True)
-
-        # export_current_image is from visualizer.py
-        # It should save the new image (e.g., different format, or just copy) into output_dir
-        # and return its path.
-        # The first argument to export_current_image was 'current_image' (blob from Gradio),
-        # now it's 'current_image_path' (string path from FastAPI).
-        # visualizer.export_current_image needs to be adapted if it expected a blob.
-        # Assuming visualizer.export_current_image can handle a path.
-        exported_image_path = export_current_image(current_image_path, output_format, output_dir=output_dir)
+        # 创建临时目录
+        temp_dir = tempfile.mkdtemp()
         
+        # 导出图片（替换zip导出为直接图片导出）
+        image_path = export_current_image(current_image, export_format)
+        
+        # 读取并处理CSV数据
         data = {}
-        if binary_pred_file_path and os.path.exists(binary_pred_file_path):
-            binary_df = pd.read_csv(binary_pred_file_path)
+        
+        # 处理二进制预测数据
+        if binary_pred_file and os.path.exists(binary_pred_file):
+            binary_df = pd.read_csv(binary_pred_file)
             if len(binary_df) > frame_index:
                 row = binary_df.iloc[frame_index]
-                binary_data = {col: str(row[col]) for col in binary_df.columns} # Ensure serializable
+                binary_data = {col: str(row[col]) for col in binary_df.columns}
                 data['binary_prediction'] = binary_data
         
-        if property_pred_file_path and os.path.exists(property_pred_file_path):
-            property_df = pd.read_csv(property_pred_file_path)
+        # 处理属性预测数据
+        if property_pred_file and os.path.exists(property_pred_file):
+            property_df = pd.read_csv(property_pred_file)
             if len(property_df) > frame_index:
                 row = property_df.iloc[frame_index]
-                property_data = {col: str(row[col]) for col in property_df.columns} # Ensure serializable
+                property_data = {col: str(row[col]) for col in property_df.columns}
                 data['property_prediction'] = property_data
         
-        # Save JSON data to output_dir
-        json_filename = f'frame_{frame_index}_data.json'
-        exported_json_path = os.path.join(output_dir, json_filename)
-        with open(exported_json_path, 'w') as f:
+        # 保存JSON数据
+        json_path = os.path.join(temp_dir, 'frame_data.json')
+        with open(json_path, 'w') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         
-        return exported_image_path, exported_json_path
+        return image_path, json_path
         
     except Exception as e:
         logger.error(f"Export error: {str(e)}")
-        # Don't rmtree temp_dir here, output_dir is managed by API layer or might contain results.
-        raise RuntimeError(f"Error during frame data export: {str(e)}")
+        if 'temp_dir' in locals():
+            shutil.rmtree(temp_dir)
+        return None, None
 
-# Removed Gradio specific create_interface() and demo.launch()
-# if __name__ == "__main__":
-#     demo = create_interface()
-#     demo.launch(
-#         server_name='0.0.0.0',
-#         server_port=50001,
-#         share=False,
-#         show_api=False
-#     )
-# Content of these functions now assumes inputs are file paths,
-# and they are responsible for creating output files in specified output_dir (for predictions/visualizations)
-# or returning paths to temporary files (for conversions) that the API layer will handle.
-# Error handling is done by raising exceptions, which FastAPI will convert to HTTPExceptions.
-
+if __name__ == "__main__":
+    demo = create_interface()
+    demo.launch(
+        server_name='0.0.0.0',
+        server_port=50005,
+        share=False,
+        show_api=False
+    )
 
