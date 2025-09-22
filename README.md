@@ -64,7 +64,7 @@ Here’s our recommended workflow:
 ![演示动画](https://github.com/PhelanShao/tox-agents/blob/main/figure/pubchem1.png)
 3.  **Prep the Input**: Copy the molecular coordinates from the SDF file into a new `.xyz` file. Alternatively, you can generate a 3D structure from a SMILES string using an empirical force field.
 4.  **Simulate the Reaction**: Toss that `.xyz` file into **Molreacone** and tell it to simulate the reaction network. It will work its magic and generate a `.reacnet` file containing all the reaction pathways.
-5.  **ReacNet Analyzer**:Use ReacNet Analyzer to parse *.reacnet files to generate network file html.
+5.  **ReacNet Analyzer**:Use ReacNet Analyzer to parse *.reacnet files to generate network file html [**ReacNet Analyzer**](https://github.com/PhelanShao/reaction_network).
 ![演示动画](https://github.com/PhelanShao/reaction_network/blob/main/reacnet/demo2.gif)
 ![演示动画](https://github.com/PhelanShao/reaction_network/blob/main/reacnet/demo3.gif)
 7.  **Extract the Path**: Find the products that match experimental data or select a reaction pathway that interests you. Save the structures along the minimum energy path as `.xyz` files.
