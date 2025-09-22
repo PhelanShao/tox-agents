@@ -8,66 +8,77 @@ We warmly welcome you to explore our newly updated AI inference platform (update
 
 ## Key Features:
 
-### Integrated AI Models:
+* **ToxD4C**: A formidable toxicity prediction model, built from the ground up on a massive and diverse dataset for exceptional accuracy. ([GitHub Repo](https://github.com/PhelanShao/ToxD4C))
+* **Uni-Mol Transfer Learning**: A framework that harnesses the power of large, pre-trained molecular models to supercharge its predictive capabilities. ([Uni-Mol Tools](https://github.com/deepmodeling/unimol_tools))
 
-* **ToxD4C**: An advanced model specifically designed for toxicity prediction, trained from scratch on extensive and diverse datasets, making it exceptionally robust and accurate.(https://github.com/PhelanShao/ToxD4C)
-* **Uni-Mol Transfer Learning**: Utilizes transfer learning from pre-trained large molecular models to enhance predictive capabilities.(https://github.com/deepmodeling/unimol_tools)
+### Go Deeper Than Just a Number
 
-### Rich Molecular Descriptors:
+Yes, you can get the essential molecular properties you need! We put computational chemistry descriptors—especially those related to electronics and reactivity—at your fingertips. Using these is crucial for truly *understanding* how a molecule behaves and exerts its toxicity.
 
-Our platform allows users to leverage computational chemistry descriptors, especially electronic and reactivity-based descriptors, significantly aiding in the interpretation of molecular toxicity behaviors.
+### Online, Open-Source, and Ready to Go!
 
-### Online and Open-Source:
+This is an online and fully open-source project! With our latest update, we've opened up our frontend build code and the backend inference and calling schemes.
 
-This project is open-source, providing both frontend build code and backend inference/calling schemes.
+You can access our online inference services here:
 
-Our online inference services are deployed at:
+* [https://toxagents.lwy-ai4water-lab.com](https://toxagents.lwy-ai4water-lab.com)
+* [https://www.bohrium.com/apps/toxagents](https://www.bohrium.com/apps/toxagents)
 
-* https://toxagents.lwy-ai4water-lab.com
-* https://www.bohrium.com/apps/toxagents
+### For the Best Experience, We **Highly** Recommend the Offline Version
 
-### Recommended Offline Version:
+Considering server costs, LLM API limitations, and overall stability, the compiled offline version is the best way to go for serious toxicity inference.
 
-Due to considerations including server costs and LLM API limitations, we highly recommend using our offline compiled version for toxicity inference. This package includes:
+The offline package includes:
+* An all-in-one **ToxD4C** inference executable.
+* The **Uni-Mol** inference framework, which allows you to load various pre-trained models.
 
-* Integrated ToxD4C inference executable
-* Uni-Mol inference framework supporting the loading of various pre-trained models
+**An Insider Tip from the Authors:** We especially recommend **ToxD4C**. Why? While it's not based on a larger pre-trained model, it was trained from scratch on a significantly larger and more diverse dataset, making it incredibly robust.
 
-Authors particularly recommend **ToxD4C**, as it leverages larger and richer datasets, despite not being based on larger-scale pre-trained models.
+Getting started is easy:
+1.  Download the executable (`.exe`) package from our [**Releases Page**](https://github.com/PhelanShao/ToxD4C/releases/tag/V2.1).
+2.  Double-click to run it. Please give it a minute or so to load everything up before the interface appears.
 
-To use the offline version:
+### The Real Power of ToxD4C: Micro-Level Insight
 
-1. Download the executable (.exe) package.(https://github.com/PhelanShao/ToxD4C/releases/tag/V2.1)
-2. Double-click to start and wait approximately one minute for the program to load fully.
+When you start using ToxD4C, you'll see its true advantage. It's a fantastic tool for studying the subtle changes in chemical reactions, allowing you to track how toxicity evolves from reactant to product. It's especially powerful when paired with **Molreac** for exploring reaction networks! (Molreac will be open-sourced soon, but you can try it now).
 
-## Advantages of ToxD4C:
+**Molreac:ONE:**
+* [https://molreac.lwy-ai4water-lab.com/](https://molreac.lwy-ai4water-lab.com/)
+* [https://www.bohrium.com/apps/molreacone](https://www.bohrium.com/apps/molreacone)
+*(Yes, we have other versions, but this one is the simplest to get started with!)*
 
-ToxD4C excels in analyzing micro-level chemical reaction mechanisms, enabling precise tracking of toxicity changes from reactants to products. This feature is especially powerful when combined with **Molreac** (soon to be open-source, currently available for trial).Molreac:ONE (https://molreac.lwy-ai4water-lab.com/ & https://www.bohrium.com/apps/molreacone)
-(Yes, we also have molreaczero and other versions, but this parameter is the simplest)
-## Why Move Beyond SMILES?
+### Why Move Beyond SMILES? Because Real Chemistry is 3D.
 
-Real chemical structures are inherently three-dimensional. Using realistic molecular conformations is crucial as conformational space significantly influences toxicity. Combined with low-energy conformational searches and molecular reaction networks, ToxD4C enables far more insightful analyses compared to traditional tools, whose predictions can often be difficult to interpret and less accurate.
+So, it's time to stop thinking in SMILES strings! Aren't real molecules three-dimensional, with complex spatial structures? A molecule's conformational space is directly linked to its toxicity.
 
-## Practical Use Case: BPA Degradation Analysis
+By combining ToxD4C with low-energy conformer searches and molecular reaction networks, you can produce brilliant, insightful analysis in your next research project. No more wrestling with a pile of hard-to-interpret and less-accurate predictions from other tools.
 
-Ever wondered about the potential toxicity of Bisphenol A (BPA) degradation products?
+### Let's Walk Through a Real-World Example: BPA Degradation
 
-Here's our recommended workflow:
+Ever wondered if the breakdown products of the endocrine disruptor Bisphenol A (BPA) are potentially toxic?
 
-1. Obtain the BPA structure by downloading its 3D SDF file from PubChem (ensure it is a 3D, not 2D, structure).
-2. Convert molecular coordinates from the SDF file into an XYZ file. Alternatively, generate structures from SMILES strings using empirical force fields.
-3. Submit the XYZ file to **Molreacone** to simulate the reaction network. This produces a `.reacnet` file containing detailed reaction pathways.
-4. Select experimentally validated products or reaction pathways of interest, then save the lowest-energy pathway structures as XYZ files.
-5. Load these XYZ files into **ToxD4C** to begin inference, obtaining predictions for 31 toxicity endpoints along the reaction pathway.
+Here’s our recommended workflow:
 
-You can further analyze structural variations and associated toxicities using our integrated computational chemistry tool, **Toxagents**, and optionally leverage platforms like **DeepSeek** for deeper analysis.
+1.  **Get the Structure**: Grab the 3D structure of BPA. You can download the SDF file directly from PubChem (and please, make sure it's the **3D** version, not 2D!).
+2.  **Prep the Input**: Copy the molecular coordinates from the SDF file into a new `.xyz` file. Alternatively, you can generate a 3D structure from a SMILES string using an empirical force field.
+3.  **Simulate the Reaction**: Toss that `.xyz` file into **Molreacone** and tell it to simulate the reaction network. It will work its magic and generate a `.reacnet` file containing all the reaction pathways.
+4.  **Extract the Path**: Find the products that match experimental data or select a reaction pathway that interests you. Save the structures along the minimum energy path as `.xyz` files.
+5.  **Predict Toxicity**: Load these `.xyz` files into **ToxD4C** to begin inference. Just like that, you have a detailed map of how **31 different toxicity endpoints** change along the entire chemical reaction path!
 
-We invite you to experience our platform and unlock deeper insights into molecular toxicity!
+Want to know *why* the toxicity changes? You now have the power to find out. You can analyze the structural shifts yourself, or feed the structures into **Toxagents** to get detailed computational chemistry data. For an even deeper dive, you can organize the properties and toxicity trends and let a platform like **DeepSeek** help you analyze the results!
 
-Tox-Agents combines deep-learning toxicity models, interactive chemical visualization, and an LLM-assisted analyst into a single workflow. The modern stack in `src/` ships the production agent: a FastAPI backend, a Next.js frontend, and orchestration scripts that wire them together.
+---
 
-The public deployments stay online at https://toxagents.lwy-ai4water-lab.com/ and https://www.bohrium.com/apps/toxagents (LTS). This repository tracks the latest source so you can reproduce or extend the stack locally.
+## A Friendly Guide from the Authors: Getting the Best Results
 
+#### Common Pitfalls to Avoid:
+* **Using the wrong structure**: Never use a 2D structure from PubChem for inference. It just won't work correctly.
+* **Using unrealistic geometries**: Feeding the model a highly distorted or physically impossible structure will give you meaningless results (though we'd be curious to see how you managed to create one!).
+* **Using transition states**: While interesting for studying reaction mechanisms, transition states are not validated ground-truth structures for toxicity prediction. Use them for insight, not for final conclusions.
+
+#### Best Practices:
+* **Always optimize first**: Use an empirical force field to optimize your molecular geometry before running predictions.
+* **Explore conformational space**: Use molecular dynamics to sample low-energy conformers of your target molecule. Better yet, sample along a reaction path to see how toxicity responds to micro-level structural changes. That's where the real insights are!
 ## What's in this repository
 - `src/` – packaged runtime for the intelligent agent; includes the FastAPI backend (`frontend/backend`), Next.js SPA (`frontend`), orchestration (`start_full_system.py`), shared predictors, visualizers, and chatbot utilities.
 - `data/` – sanitized examples used by the demos; training datasets live elsewhere (see below).
