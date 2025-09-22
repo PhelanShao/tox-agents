@@ -1,0 +1,14 @@
+{
+  "n_features_initial": 2139,
+  "n_features_after_selection": 2137,
+  "dropped_constant": [
+    "Charge",
+    "IsotopeAtomCount"
+  ],
+  "dropped_fp_low_support": [],
+  "correlation_threshold": 1.0,
+  "dropped_correlated": [],
+  "l1_select": false,
+  "l1_top_k": null,
+  "l1_C": 0.1
+}
