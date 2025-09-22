@@ -4,6 +4,66 @@
 [![Next.js](https://img.shields.io/badge/Next.js-14.2+-black.svg)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-latest-green.svg)](https://fastapi.tiangolo.com/)
 
+We warmly welcome you to explore our newly updated AI inference platform (updated on September 22, 2025). Our comprehensive architecture integrates multiple advanced models and tools to provide powerful toxicity predictions.
+
+## Key Features:
+
+### Integrated AI Models:
+
+* **ToxD4C**: An advanced model specifically designed for toxicity prediction, trained from scratch on extensive and diverse datasets, making it exceptionally robust and accurate.
+* **Uni-Mol Transfer Learning**: Utilizes transfer learning from pre-trained large molecular models to enhance predictive capabilities.
+
+### Rich Molecular Descriptors:
+
+Our platform allows users to leverage computational chemistry descriptors, especially electronic and reactivity-based descriptors, significantly aiding in the interpretation of molecular toxicity behaviors.
+
+### Online and Open-Source:
+
+This project is open-source, providing both frontend build code and backend inference/calling schemes.
+
+Our online inference services are deployed at:
+
+* https://toxagents.lwy-ai4water-lab.com
+* https://www.bohrium.com/apps/toxagents
+
+### Recommended Offline Version:
+
+Due to considerations including server costs and LLM API limitations, we highly recommend using our offline compiled version for toxicity inference. This package includes:
+
+* Integrated ToxD4C inference executable
+* Uni-Mol inference framework supporting the loading of various pre-trained models
+
+Authors particularly recommend **ToxD4C**, as it leverages larger and richer datasets, despite not being based on larger-scale pre-trained models.
+
+To use the offline version:
+
+1. Download the executable (.exe) package.
+2. Double-click to start and wait approximately one minute for the program to load fully.
+
+## Advantages of ToxD4C:
+
+ToxD4C excels in analyzing micro-level chemical reaction mechanisms, enabling precise tracking of toxicity changes from reactants to products. This feature is especially powerful when combined with **Molreac** (soon to be open-source, currently available for trial).
+
+## Why Move Beyond SMILES?
+
+Real chemical structures are inherently three-dimensional. Using realistic molecular conformations is crucial as conformational space significantly influences toxicity. Combined with low-energy conformational searches and molecular reaction networks, ToxD4C enables far more insightful analyses compared to traditional tools, whose predictions can often be difficult to interpret and less accurate.
+
+## Practical Use Case: BPA Degradation Analysis
+
+Ever wondered about the potential toxicity of Bisphenol A (BPA) degradation products?
+
+Here's our recommended workflow:
+
+1. Obtain the BPA structure by downloading its 3D SDF file from PubChem (ensure it is a 3D, not 2D, structure).
+2. Convert molecular coordinates from the SDF file into an XYZ file. Alternatively, generate structures from SMILES strings using empirical force fields.
+3. Submit the XYZ file to **Molreacone** to simulate the reaction network. This produces a `.reacnet` file containing detailed reaction pathways.
+4. Select experimentally validated products or reaction pathways of interest, then save the lowest-energy pathway structures as XYZ files.
+5. Load these XYZ files into **ToxD4C** to begin inference, obtaining predictions for 31 toxicity endpoints along the reaction pathway.
+
+You can further analyze structural variations and associated toxicities using our integrated computational chemistry tool, **Toxagents**, and optionally leverage platforms like **DeepSeek** for deeper analysis.
+
+We invite you to experience our platform and unlock deeper insights into molecular toxicity!
+
 Tox-Agents combines deep-learning toxicity models, interactive chemical visualization, and an LLM-assisted analyst into a single workflow. The modern stack in `src/` ships the production agent: a FastAPI backend, a Next.js frontend, and orchestration scripts that wire them together.
 
 The public deployments stay online at https://toxagents.lwy-ai4water-lab.com/ and https://www.bohrium.com/apps/toxagents (LTS). This repository tracks the latest source so you can reproduce or extend the stack locally.
