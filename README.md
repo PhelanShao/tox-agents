@@ -10,8 +10,8 @@ We warmly welcome you to explore our newly updated AI inference platform (update
 
 ### Integrated AI Models:
 
-* **ToxD4C**: An advanced model specifically designed for toxicity prediction, trained from scratch on extensive and diverse datasets, making it exceptionally robust and accurate.
-* **Uni-Mol Transfer Learning**: Utilizes transfer learning from pre-trained large molecular models to enhance predictive capabilities.
+* **ToxD4C**: An advanced model specifically designed for toxicity prediction, trained from scratch on extensive and diverse datasets, making it exceptionally robust and accurate.(https://github.com/PhelanShao/ToxD4C)
+* **Uni-Mol Transfer Learning**: Utilizes transfer learning from pre-trained large molecular models to enhance predictive capabilities.(https://github.com/deepmodeling/unimol_tools)
 
 ### Rich Molecular Descriptors:
 
@@ -37,13 +37,13 @@ Authors particularly recommend **ToxD4C**, as it leverages larger and richer dat
 
 To use the offline version:
 
-1. Download the executable (.exe) package.
+1. Download the executable (.exe) package.(https://github.com/PhelanShao/ToxD4C/releases/tag/V2.1)
 2. Double-click to start and wait approximately one minute for the program to load fully.
 
 ## Advantages of ToxD4C:
 
-ToxD4C excels in analyzing micro-level chemical reaction mechanisms, enabling precise tracking of toxicity changes from reactants to products. This feature is especially powerful when combined with **Molreac** (soon to be open-source, currently available for trial).
-
+ToxD4C excels in analyzing micro-level chemical reaction mechanisms, enabling precise tracking of toxicity changes from reactants to products. This feature is especially powerful when combined with **Molreac** (soon to be open-source, currently available for trial).Molreac:ONE (https://molreac.lwy-ai4water-lab.com/ & https://www.bohrium.com/apps/molreacone)
+(Yes, we also have molreaczero and other versions, but this parameter is the simplest)
 ## Why Move Beyond SMILES?
 
 Real chemical structures are inherently three-dimensional. Using realistic molecular conformations is crucial as conformational space significantly influences toxicity. Combined with low-energy conformational searches and molecular reaction networks, ToxD4C enables far more insightful analyses compared to traditional tools, whose predictions can often be difficult to interpret and less accurate.
