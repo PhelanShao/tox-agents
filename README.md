@@ -4,7 +4,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-14.2+-black.svg)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-latest-green.svg)](https://fastapi.tiangolo.com/)
 
-We warmly welcome you to explore our newly updated AI inference platform (updated on September 22, 2025). Our comprehensive architecture integrates multiple advanced models and tools to provide powerful toxicity predictions.
+Welcome to explore our newly updated AI inference platform (updated on September 22, 2025). Comprehensive architecture integrates multiple advanced models and tools to provide powerful toxicity predictions.
 ## Key Features:
 
 * **ToxD4C**: A formidable toxicity prediction model, built from the ground up on a massive and diverse dataset for exceptional accuracy. ([GitHub Repo](https://github.com/PhelanShao/ToxD4C))
@@ -12,7 +12,7 @@ We warmly welcome you to explore our newly updated AI inference platform (update
 
 ### Go Deeper Than Just a Number
 
-Yes, you can get the essential molecular properties you need! We put computational chemistry descriptors—especially those related to electronics and reactivity—at your fingertips. Using these is crucial for truly *understanding* how a molecule behaves and exerts its toxicity.
+Yeah, you can get the essential molecular properties you need! We put computational chemistry descriptors—especially those related to electronics and reactivity—at your fingertips. Using these is crucial for truly *understanding* how a molecule behaves and exerts its toxicity.
 ![演示动画](https://github.com/PhelanShao/tox-agents/blob/main/figure/2.gif)
 
 ### Online, Open-Source, and Ready to Go!
