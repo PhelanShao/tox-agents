@@ -245,7 +245,7 @@ Implementation checklist:
 ## Training and evaluation scripts
 - ToxD4C training: `ToxD4C_framework/train.py`
 - UniMol fine-tuning: `trainfordl/3528_datasets/3528_train.py`
-- Classical ML baselines: `trainforml/ml_train.py`
+- Classical ML baselines: `unimol_pipeline/run_fingerprint_training.py`
 
 The datasets referenced above require external downloads; see the linked Google Drive in `ToxD4C_framework/README` for instructions.
 
