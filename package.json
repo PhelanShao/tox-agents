@@ -1,5 +1,0 @@
-{
-  "devDependencies": {
-    "@swc/wasm": "^1.13.5"
-  }
-}
