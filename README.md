@@ -4,191 +4,222 @@
 [![Next.js](https://img.shields.io/badge/Next.js-14.2+-black.svg)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-latest-green.svg)](https://fastapi.tiangolo.com/)
 
-Welcome to explore our newly updated AI inference platform (updated on September 22, 2025). Comprehensive architecture integrates multiple advanced models and tools to provide powerful toxicity predictions.
-## Key Features:
-
-* **ToxD4C**: A formidable toxicity prediction model, built from the ground up on a massive and diverse dataset for exceptional accuracy. ([GitHub Repo](https://github.com/PhelanShao/ToxD4C))
-* **Uni-Mol Transfer Learning**: A framework that harnesses the power of large, pre-trained molecular models to supercharge its predictive capabilities. ([Uni-Mol Tools](https://github.com/deepmodeling/unimol_tools))
-
-## Data
-
-Tox-D4C: https://doi.org/10.6084/m9.figshare.30156718.v1
-
-uni-mol: data/data/original/processed_final8k213_original.csv
-
-Reacnet: https://doi.org/10.6084/m9.figshare.30171562
-
-### Go Deeper Than Just a Number
-
-Yeah, you can get the essential molecular properties you need! We put computational chemistry descriptors—especially those related to electronics and reactivity—at your fingertips. Using these is crucial for truly *understanding* how a molecule behaves and exerts its toxicity.
-![演示动画](https://github.com/PhelanShao/tox-agents/blob/main/figure/2.gif)
-
-### Online, Open-Source, and Ready to Go!
-
-This is an online and fully open-source project! With our latest update, we've opened up our frontend build code and the backend inference and calling schemes.
-
-You can access our online inference services here:
-
-* [https://toxagents.lwy-ai4water-lab.com](https://toxagents.lwy-ai4water-lab.com)
-* [https://www.bohrium.com/apps/toxagents](https://www.bohrium.com/apps/toxagents)
-* 👇
-![演示动画](https://github.com/PhelanShao/tox-agents/blob/main/figure/3.gif )
-### For the Best Experience, We **Highly** Recommend the Offline Version
-
-Considering server costs, LLM API limitations, and overall stability, the compiled offline version is the best way to go for serious toxicity inference.
-
-The offline package includes:
-* An all-in-one **ToxD4C** inference executable.
-* The **Uni-Mol** inference framework, which allows you to load various pre-trained models.
-![演示动画](https://github.com/PhelanShao/tox-agents/blob/main/figure/4.png )
-**An Insider Tip from the Authors:** We especially recommend **ToxD4C**. Why? While it's not based on a larger pre-trained model, it was trained from scratch on a significantly larger and more diverse dataset, making it incredibly robust.
-
-Getting started is easy:
-1.  Download the executable (`.exe`) package from our [**Releases Page**](https://github.com/PhelanShao/ToxD4C/releases/tag/V2.1).
-2.  Double-click to run it. Please give it a minute or so to load everything up before the interface appears.
-
-### The Real Power of ToxD4C: Micro-Level Insight
-
-When you start using ToxD4C, you'll see its true advantage. It's a fantastic tool for studying the subtle changes in chemical reactions, allowing you to track how toxicity evolves from reactant to product. It's especially powerful when paired with **Molreac** for exploring reaction networks! (Molreac will be open-sourced soon, but you can try it now).
-
-**Molreac:ONE:**
-* [https://molreac.lwy-ai4water-lab.com/](https://molreac.lwy-ai4water-lab.com/)
-* [https://www.bohrium.com/apps/molreacone](https://www.bohrium.com/apps/molreacone)
-*(Yes, we have other versions, but this one is the simplest to get started with!)*
-![演示动画](https://github.com/PhelanShao/tox-agents/blob/main/figure/molreacone1.png)
-### Why Move Beyond SMILES? Because Real Chemistry is 3D.
-
-So, it's time to stop thinking in SMILES strings! Aren't real molecules three-dimensional, with complex spatial structures? A molecule's conformational space is directly linked to its toxicity.
-
-By combining ToxD4C with low-energy conformer searches and molecular reaction networks, you can produce brilliant, insightful analysis in your next research project. No more wrestling with a pile of hard-to-interpret and less-accurate predictions from other tools.
-
-### Let's Walk Through a Real-World Example: BPA Degradation
-
-Ever wondered if the breakdown products of the endocrine disruptor Bisphenol A (BPA) are potentially toxic?
-
-Here’s our recommended workflow:
-
-1.  **Get the Structure**: Grab the 3D structure of BPA. You can download the SDF file directly from PubChem (and please, make sure it's the **3D** version, not 2D!).
-![演示动画](https://github.com/PhelanShao/tox-agents/blob/main/figure/pubchem1.png)
-3.  **Prep the Input**: Copy the molecular coordinates from the SDF file into a new `.xyz` file. Alternatively, you can generate a 3D structure from a SMILES string using an empirical force field.
-4.  **Simulate the Reaction**: Toss that `.xyz` file into **Molreacone** and tell it to simulate the reaction network. It will work its magic and generate a `.reacnet` file containing all the reaction pathways.
-5.  **ReacNet Analyzer**:Use ReacNet Analyzer to parse *.reacnet files to generate network file html [**ReacNet Analyzer**](https://github.com/PhelanShao/reaction_network).
-![演示动画](https://github.com/PhelanShao/reaction_network/blob/main/reacnet/demo2.gif)
-![演示动画](https://github.com/PhelanShao/reaction_network/blob/main/reacnet/demo3.gif)
-7.  **Extract the Path**: Find the products that match experimental data or select a reaction pathway that interests you. Save the structures along the minimum energy path as `.xyz` files.
-8.  **Predict Toxicity**: Load these `.xyz` files into **ToxD4C** to begin inference. Just like that, you have a detailed map of how **31 different toxicity endpoints** change along the entire chemical reaction path!
-![演示动画](https://github.com/PhelanShao/tox-agents/blob/main/figure/6.png)
-Want to know *why* the toxicity changes? You now have the power to find out. You can analyze the structural shifts yourself, or feed the structures into **Toxagents** to get detailed computational chemistry data. For an even deeper dive, you can organize the properties and toxicity trends and let a platform like **DeepSeek** help you analyze the results!
+Tox-Agents is an AI-driven inference platform for exploring molecular toxicity at scale. The ecosystem brings together state-of-the-art deep learning models, transfer-learning frameworks, and reaction-network tooling so that chemists and toxicologists can move from raw structures to defensible insights with minimal friction. The current release (September 22, 2025) unifies the full-stack web experience with offline executables, enabling both rapid experimentation and production-grade studies.
 
 ---
 
-## A Friendly Guide from the Authors: Getting the Best Results
+## Platform Highlights
 
-#### Common Pitfalls to Avoid:
-* **Using the wrong structure**: Never use a 2D structure from PubChem for inference. It just won't work correctly.
-* **Using unrealistic geometries**: Feeding the model a highly distorted or physically impossible structure will give you meaningless results (though we'd be curious to see how you managed to create one!).
-* **Using transition states**: While interesting for studying reaction mechanisms, transition states are not validated ground-truth structures for toxicity prediction. Use them for insight, not for final conclusions.
+- **ToxD4C** – a from-scratch toxicity model trained on a large, diverse dataset for robust endpoint prediction. ([GitHub](https://github.com/PhelanShao/ToxD4C))
+- **Uni-Mol Transfer Learning** – leverages powerful pre-trained molecular encoders to boost inference accuracy. ([Uni-Mol Tools](https://github.com/deepmodeling/unimol_tools))
+- **Reaction network integration** – tight coupling with Molreac and ReacNet Analyzer for pathway-aware toxicity analysis.
+- **Interactive visualization** – frontend widgets expose molecular properties, descriptors, and inference diagnostics in real time.
 
-#### Best Practices:
-* **Always optimize first**: Use an empirical force field to optimize your molecular geometry before running predictions.
-* **Explore conformational space**: Use molecular dynamics to sample low-energy conformers of your target molecule. Better yet, sample along a reaction path to see how toxicity responds to micro-level structural changes. That's where the real insights are!
+## Data Availability
 
-![演示动画](https://github.com/PhelanShao/tox-agents/blob/main/figure/molreac0.gif)
-![演示动画](https://github.com/PhelanShao/tox-agents/blob/main/figure/molreac1.gif)
+- **Tox-D4C dataset**: https://doi.org/10.6084/m9.figshare.30156718.v1
+- **Uni-Mol processed data**: `data/data/original/processed_final8k213_original.csv`
+- **Reacnet dataset**: https://doi.org/10.6084/m9.figshare.30171562
 
-## What's in this repository
-- `src/` – packaged runtime for the intelligent agent; includes the FastAPI backend (`frontend/backend`), Next.js SPA (`frontend`), orchestration (`start_full_system.py`), shared predictors, visualizers, and chatbot utilities.
-- `data/` – sanitized examples used by the demos; training datasets live elsewhere (see below).
-- `ToxD4C_framework/`, `trainfordl/`, `trainforml/` – research and training code for the ToxD4C deep model, UniMol transfer learning, and classic ML baselines.
-- `requirements.txt` / `requirements_full.txt` – minimal runtime stack vs. research stack (with optional UniMol + LightRAG extras).
-- `README_original_gradio.md` – legacy documentation for the initial Gradio prototype.
+Computational chemistry descriptors—especially those tied to electronic structure and reactivity—are surfaced directly in the UI to help you interpret model outputs beyond a single toxicity score.
 
-> The previous README tracked an older file layout; everything below reflects the current `src` bundle.
+![Platform demo](https://github.com/PhelanShao/tox-agents/blob/main/figure/2.gif)
 
-## Integrated agent quick start (recommended)
+---
 
-**Prerequisites**
-- Python 3.8+ (any environment works; the launcher now only warns if `unimol_tools` is missing for UniMol transfer inference).
-- Node.js 18+ and npm (for Next.js 14).
-- Optional: PyMOL if you want local 3D rendering.
+## Access Options
 
-**1. Install dependencies**
+### Online Services
+
+The hosted instance is fully open source and ready to explore:
+
+- https://toxagents.lwy-ai4water-lab.com
+- https://www.bohrium.com/apps/toxagents
+
+![Online workflow](https://github.com/PhelanShao/tox-agents/blob/main/figure/3.gif)
+
+### Recommended: Offline Package
+
+For heavy workloads, offline use delivers better stability, avoids LLM API quotas, and reduces server costs. The bundled package includes:
+
+- The all-in-one **ToxD4C** inference executable.
+- The **Uni-Mol** inference framework with support for loading multiple pre-trained checkpoints.
+
+![Offline package](https://github.com/PhelanShao/tox-agents/blob/main/figure/4.png)
+
+**Author tip:** We strongly recommend the standalone ToxD4C executable. Although it forgoes massive pre-training, its large in-domain dataset yields highly reliable predictions.
+
+**Getting started offline**
+
+1. Download the `.exe` bundle from the [ToxD4C releases page](https://github.com/PhelanShao/ToxD4C/releases/tag/V2.1).
+2. Double-click to launch and allow a minute for initialization before the interface loads.
+
+---
+
+## Micro-Level Toxicity Insight with ToxD4C
+
+ToxD4C excels at tracking subtle shifts in toxicity throughout a reaction pathway. Pair it with **Molreac** for generating reaction networks and **ReacNet Analyzer** for visual inspection to follow how reactants evolve into products.
+
+- **Molreac:ONE**: https://molreac.lwy-ai4water-lab.com/ | https://www.bohrium.com/apps/molreacone
+
+![Molreac demo](https://github.com/PhelanShao/tox-agents/blob/main/figure/molreacone1.png)
+
+Combining 3D conformer searches with reaction-network analysis delivers rich insight that SMILES-only workflows miss. Low-energy structures are directly linked to observed toxicity trends.
+
+---
+
+## Example Workflow: Bisphenol A (BPA) Degradation
+
+Curious whether BPA degradation products remain toxic? Follow this pipeline:
+
+1. **Acquire a 3D structure**: Download the 3D SDF for BPA from PubChem.
+2. **Prepare the input**: Copy coordinates into a new `.xyz` file, or generate the 3D structure from SMILES via an empirical force field.
+3. **Simulate the network**: Load the `.xyz` file into **Molreac:ONE** to generate reaction pathways (`.reacnet`).
+4. **Analyze the network**: Use [ReacNet Analyzer](https://github.com/PhelanShao/reaction_network) to transform `.reacnet` files into interactive HTML visualizations.
+5. **Extract pathways**: Identify products that match experiments or select compelling branches and export the minimum-energy structures as `.xyz` files.
+6. **Predict toxicity**: Batch the `.xyz` files through **ToxD4C** to evaluate how all 31 toxicity endpoints evolve along the reaction path.
+
+![Reaction analysis](https://github.com/PhelanShao/tox-agents/blob/main/figure/6.png)
+
+With the resulting structural and descriptor data, you can perform manual interpretation, feed the outputs into Tox-Agents for further computation, or escalate to downstream platforms such as DeepSeek for meta-analysis.
+
+---
+
+## Guidance from the Authors
+
+### Common Pitfalls
+
+- Avoid using 2D PubChem structures for inference; always obtain a 3D geometry.
+- Reject unrealistic or highly distorted conformations—the predictions will not be meaningful.
+- Transition states are insightful but not validated as ground-truth inputs for toxicity; treat them as exploratory evidence only.
+
+### Best Practices
+
+- Optimize geometries with an empirical force field before prediction.
+- Sample low-energy conformers, ideally across an entire reaction pathway, to reveal micro-level toxicity shifts.
+
+![Conformer sampling](https://github.com/PhelanShao/tox-agents/blob/main/figure/molreac0.gif)
+![Reaction dynamics](https://github.com/PhelanShao/tox-agents/blob/main/figure/molreac1.gif)
+
+---
+
+## Repository Layout
+
+- `src/` – production runtime for the intelligent agent, including the FastAPI backend (`frontend/backend`), Next.js SPA (`frontend`), orchestration scripts, shared predictors, visualizers, and chatbot utilities.
+- `data/` – sanitized example datasets used in demos (training corpora are hosted separately).
+- `ToxD4C_framework/`, `trainfordl/`, `trainforml/` – research and training code for the ToxD4C deep model, UniMol transfer learning, and traditional ML baselines.
+- `requirements.txt` / `requirements_full.txt` – minimal runtime stack vs. the full research environment (including optional UniMol + LightRAG extras).
+- `README_original_gradio.md` – legacy documentation for the original Gradio prototype.
+
+> The previous README tracked an older file layout; the sections below reflect the modern `src` bundle.
+
+---
+
+## Integrated Agent Quick Start (Recommended)
+
+### Prerequisites
+
+- Python 3.8+
+- Node.js 18+ with npm
+- Optional: PyMOL for local 3D visualization
+
+### 1. Install Dependencies
+
 ```bash
 cd src
 pip install -r ../requirements_full.txt  # or requirements.txt for a lean runtime
 npm install --prefix frontend
 ```
 
-**2. Provide runtime assets**
-- Place UniMol checkpoints under `src/models/` (e.g. `models/ToxPred_modelmini`, `models/MD_model`, `models/refscale.npz`).
-- Add any NPZ, CSV, or descriptor files needed by your workflows.
-- Missing assets no longer crash the UI—the frontend highlights the required file and the expected directory.
+### 2. Provide Runtime Assets
 
-**3. Launch the orchestrated stack**
+- Place UniMol checkpoints under `src/models/` (for example, `models/ToxPred_modelmini`, `models/MD_model`, `models/refscale.npz`).
+- Add any NPZ, CSV, or descriptor files required for your workflow.
+- Missing assets no longer crash the UI—the frontend highlights the required file and target directory.
+
+### 3. Launch the Orchestrated Stack
+
 ```bash
 python start_full_system.py
 ```
-The launcher clears ports (`3000`, `8000`, `50001-50003`), validates the environment, installs frontend deps on demand, and then boots:
-- FastAPI backend on `http://localhost:8000`
-- Next.js frontend on `http://localhost:3000`
 
-Backend logs stream to the console; when you see `✅ 后端服务启动成功`, the API is ready. The script monitors both processes and forwards stdout/stderr so you can stop everything with `Ctrl+C` once.
+The launcher clears ports `3000`, `8000`, and `50001-50003`, validates the environment, installs frontend dependencies on demand, and boots the stack:
 
-**4. Verify**
-- API health: `curl http://localhost:8000/health`
-- Frontend: open `http://localhost:3000`
-- End-to-end smoke test: `python frontend/test_real_prediction.py` (runs from `src/frontend`).
+- FastAPI backend → `http://localhost:8000`
+- Next.js frontend → `http://localhost:3000`
 
-## Running services manually
+Backend logs stream to the console. Once you see `✅ 后端服务启动成功`, the API is ready. Terminate both services together with `Ctrl+C`.
 
-### Backend only
+### 4. Verify the Deployment
+
+- API health check: `curl http://localhost:8000/health`
+- Frontend smoke test: open `http://localhost:3000`
+- End-to-end test: `python frontend/test_real_prediction.py` (run from `src/frontend`).
+
+---
+
+## Running Services Manually
+
+### Backend Only
+
 ```bash
 cd src/frontend/backend
 uvicorn main_fixed:app --host 0.0.0.0 --port 8000 --reload
 ```
-Key files:
-- `main_fixed.py` lazily loads the predictors from `src/` and exposes conversion, prediction, visualization, export, and chat endpoints.
-- `simple_rag_service.py` delivers a lightweight document store in `src/simple_rag_storage/`.
-- `chatbot.py` contains the Gradio interface and request assembly logic.
 
-The backend resolves model paths relative to `src/` by default. Override via environment variables before launch:
+Key modules:
+
+- `main_fixed.py` lazily loads predictors from `src/` and exposes conversion, prediction, visualization, export, and chat endpoints.
+- `simple_rag_service.py` serves a lightweight document store located at `src/simple_rag_storage/`.
+- `chatbot.py` implements the Gradio interface and request assembly logic.
+
+Override default model paths by exporting environment variables before launch:
+
 ```bash
 export BINARY_MODEL_PATH="models/ToxPred_modelmini"
 export PROPERTY_MODEL_PATH="models/MD_model"
 export REFSCALE_PATH="models/refscale.npz"
 ```
-If a referenced model is missing, responses include a clear instruction indicating which directory to populate.
 
-### Frontend only
+If a referenced model is missing, the backend returns a clear message detailing which directory to populate.
+
+### Frontend Only
+
 ```bash
 cd src/frontend
 npm install   # first run
-npm run dev   # serve on http://localhost:3000
+npm run dev   # serves http://localhost:3000
 ```
-Set the API URL when pointing to a remote backend:
+
+To connect a remote backend, configure the API endpoint before starting the dev server:
+
 ```bash
 export NEXT_PUBLIC_API_URL="https://your-backend.example.com"
 npm run dev
 ```
-Additional frontend env vars:
+
+Optional UI hints can be set via environment variables (the backend still governs actual model loading):
+
 ```bash
 NEXT_PUBLIC_BINARY_MODEL_PATH=models/ToxPred_modelmini
 NEXT_PUBLIC_PROPERTY_MODEL_PATH=models/MD_model
 NEXT_PUBLIC_REFERENCE_PATH=models/refscale.npz
 ```
-These paths only drive UI hints—the backend still controls the actual inference files.
 
-## Model assets and data sources
-- **UniMol transfers**: copy checkpoints into `src/models/`; you can reuse `ToxPred_modelmini/` and `MD_model/` from the production deployment.
-- **ToxD4C weights/data**: download from the shared drive (TOXRIC, TDC, Wu et al.) and place under `ToxD4C_framework/data` to retrain.
-- **Sample labels**: `data/DATA_labels.csv` hosts cleaned labels derived from `21sttox10k`.
+---
 
-The project supports XYZ, NPZ, SDF, MOL, and SMILES inputs. The converter utilities in `src/interface.py` handle cross-format preparation.
+## Model Assets and Data Sources
 
-## Chatbot prompt governance (development requirement)
-The `src/chatbot.py` interface currently forwards user turns directly to the configured LLM. To align the agent with the updated ToxD4C analysis policy, store prompt metadata in `src/frontend/backend/llm_report_config.json` (or an equivalent shared location) and load it before sending the first request.
+- **UniMol checkpoints** – copy into `src/models/` (for example, reuse `ToxPred_modelmini/` and `MD_model/` from production deployments).
+- **ToxD4C weights and datasets** – download from the shared drive (TOXRIC, TDC, Wu et al.) and place under `ToxD4C_framework/data` to retrain.
+- **Sample labels** – `data/DATA_labels.csv` contains cleaned labels derived from `21sttox10k`.
 
-Recommended configuration:
+Converters in `src/interface.py` support XYZ, NPZ, SDF, MOL, and SMILES inputs for streamlined data preparation.
+
+## Chatbot Prompt Governance (Development)
+
+`src/chatbot.py` currently forwards user turns directly to the configured LLM. To align responses with the ToxD4C analysis policy, store prompt metadata in `src/frontend/backend/llm_report_config.json` (or another shared location) and load it before sending the first request. A representative configuration:
+
 ```json
 {
   "llm_model": "TBD",
@@ -237,17 +268,24 @@ Recommended configuration:
 ```
 
 Implementation checklist:
+
 - Load `A1_system_prompt` as the system message before the first user turn.
-- Surface the SHAP threshold table to the model so the Evidence Matrix can cite it explicitly.
-- Persist decision records (rules applied, threshold comparisons) alongside chat transcripts for auditing.
-- Ensure the chatbot surfaces "AD unknown" whenever the backend does not supply applicability-domain metrics.
+- Make the SHAP threshold table visible to the model so the Evidence Matrix can cite it explicitly.
+- Persist decision records (rules applied and threshold comparisons) alongside chat transcripts for auditing.
+- Surface "AD unknown" whenever the backend does not provide applicability-domain metrics.
 
-## Training and evaluation scripts
-- ToxD4C training: `ToxD4C_framework/train.py`
-- UniMol fine-tuning: `trainfordl/3528_datasets/3528_train.py`
-- Classical ML baselines: `unimol_pipeline/run_fingerprint_training.py`
+## Training and Evaluation Scripts
 
-The datasets referenced above require external downloads; see the linked Google Drive in `ToxD4C_framework/README` for instructions.
+- ToxD4C training – `ToxD4C_framework/train.py`
+- UniMol fine-tuning – `trainfordl/3528_datasets/3528_train.py`
+- Classical ML baselines – `unimol_pipeline/run_fingerprint_training.py`
+
+Datasets referenced above require external downloads; consult `ToxD4C_framework/README` for detailed instructions.
 
 ## Licensing
+
 Released under the MIT License (see `LICENSE`).
+
+---
+
+Need help or have feedback? Please open an issue or reach out via the project discussions. Happy experimenting!
