@@ -83,7 +83,8 @@ Curious whether BPA degradation products remain toxic? Follow this pipeline:
 
 With the resulting structural and descriptor data, you can perform manual interpretation, feed the outputs into Tox-Agents for further computation, or escalate to downstream platforms such as DeepSeek for meta-analysis.
 
-October 19, 2025
+(Commits on Oct 19, 2025)
+
 Also welcome to try the Next Generation Reaction Network Explorer - a fast first principles computation and reaction network exploration tool!
 ![Platform demo](https://github.com/PhelanShao/reaction_network_OL/blob/main/aroe/1.gif)
 
