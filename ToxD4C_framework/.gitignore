@@ -1,0 +1,62 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Data files (large)
+data/dataset/
+data/multi_conformer/
+data/processed/
+data/processed_scaffold/
+*.lmdb
+*.lmdb-lock
+
+# Model checkpoints and weights
+checkpoints/
+checkpoints_real/
+*.pth
+*.pt
+*.ckpt
+
+# Experiment outputs
+outputs/
+results/
+logs/
+*.log
+
+# Cached fingerprints and configs
+data/train_fingerprints.npz
+data/confidence_config.pkl
+data/train_smiles.txt
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# CSV/image outputs
+*.csv
+*.png
+*.pdf
+*.jpg
+*.jpeg
+
+# Keep essential files
+!requirements.txt
+!README.md
