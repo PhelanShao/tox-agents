@@ -21,7 +21,10 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import numpy as np
-from sklearn.metrics import roc_auc_score, mean_squared_error
+from sklearn.metrics import (
+    roc_auc_score, mean_squared_error, 
+    average_precision_score, matthews_corrcoef
+)
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -170,7 +173,9 @@ def train_epoch(model, train_loader, optimizer, device, config, grad_clip=1.0, g
             # Classification loss (BCE with mask)
             cls_loss = torch.tensor(0.0, device=device)
             if not config.get('disable_classification', False):
-                cls_loss_fn = nn.BCEWithLogitsLoss(reduction='none')
+                # Use Focal Loss (gamma=2.0) for handling class imbalance
+                focal_gamma = config.get('focal_gamma', 2.0)
+                cls_loss_fn = FocalLoss(gamma=focal_gamma, reduction='none')
                 cls_loss = cls_loss_fn(cls_logits, cls_labels)
                 cls_loss = (cls_loss * cls_mask.float()).sum() / (cls_mask.sum() + 1e-8)
 

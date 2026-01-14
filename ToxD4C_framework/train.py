@@ -15,13 +15,17 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import LambdaLR, ReduceLROnPlateau
 import numpy as np
-from sklearn.metrics import accuracy_score, roc_auc_score, mean_squared_error, r2_score
+from sklearn.metrics import (
+    accuracy_score, roc_auc_score, mean_squared_error, r2_score,
+    average_precision_score, matthews_corrcoef, precision_recall_curve
+)
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from data.lmdb_dataset import create_lmdb_dataloaders
 from models.toxd4c import ToxD4C
 from configs.toxd4c_config import get_experiment_config
+from models.losses.focal_loss import FocalLoss, compute_class_weights
 from training.splits import build_scaffold_lmdb_splits, build_scaffold_lmdb_splits_from_dir
 from preprocess_data import preprocess_lmdb
 
@@ -80,8 +84,23 @@ def safe_loss_computation(pred, target, mask, loss_fn):
     return loss
 
 
-def compute_metrics(predictions, targets, masks, task_type='classification'):
+def compute_metrics(predictions, targets, masks, task_type='classification', task_names=None):
+    """
+    Compute evaluation metrics with imbalance-robust measures.
+    
+    For classification:
+        - Accuracy
+        - ROC-AUC
+        - PR-AUC (Precision-Recall AUC) - robust to class imbalance
+        - MCC (Matthews Correlation Coefficient) - balanced measure
+    
+    For regression:
+        - MSE, RMSE, R²
+    """
     metrics = {}
+    all_aucs = []
+    all_pr_aucs = []
+    all_mccs = []
     
     for task_idx in range(predictions.shape[1]):
         task_pred = predictions[:, task_idx]
@@ -97,17 +116,32 @@ def compute_metrics(predictions, targets, masks, task_type='classification'):
         if len(valid_pred) == 0:
             continue
         
+        task_name = task_names[task_idx] if task_names and task_idx < len(task_names) else f'task_{task_idx}'
+        
         try:
             if task_type == 'classification':
                 pred_binary = (valid_pred > 0.5).astype(int)
                 target_binary = valid_target.astype(int)
                 
+                # Accuracy
                 acc = accuracy_score(target_binary, pred_binary)
-                metrics[f'task_{task_idx}_accuracy'] = acc
+                metrics[f'{task_name}_accuracy'] = acc
                 
                 if len(np.unique(target_binary)) > 1:
+                    # ROC-AUC
                     auc = roc_auc_score(target_binary, valid_pred)
-                    metrics[f'task_{task_idx}_auc'] = auc
+                    metrics[f'{task_name}_auc'] = auc
+                    all_aucs.append(auc)
+                    
+                    # PR-AUC (more robust to class imbalance)
+                    pr_auc = average_precision_score(target_binary, valid_pred)
+                    metrics[f'{task_name}_pr_auc'] = pr_auc
+                    all_pr_aucs.append(pr_auc)
+                    
+                    # MCC (Matthews Correlation Coefficient)
+                    mcc = matthews_corrcoef(target_binary, pred_binary)
+                    metrics[f'{task_name}_mcc'] = mcc
+                    all_mccs.append(mcc)
             else:
                 mse = mean_squared_error(valid_target, valid_pred)
                 if np.var(valid_target) < 1e-6:
@@ -116,24 +150,50 @@ def compute_metrics(predictions, targets, masks, task_type='classification'):
                     r2 = r2_score(valid_target, valid_pred)
                 rmse = np.sqrt(mse)
                 
-                metrics[f'task_{task_idx}_mse'] = mse
-                metrics[f'task_{task_idx}_rmse'] = rmse
-                metrics[f'task_{task_idx}_r2'] = r2
+                metrics[f'{task_name}_mse'] = mse
+                metrics[f'{task_name}_rmse'] = rmse
+                metrics[f'{task_name}_r2'] = r2
         except Exception as e:
-            logger.warning(f"Error computing metrics for task {task_idx}: {e}")
+            logger.warning(f"Error computing metrics for {task_name}: {e}")
             continue
+    
+    # Add aggregate metrics for classification
+    if task_type == 'classification':
+        if all_aucs:
+            metrics['mean_auc'] = np.mean(all_aucs)
+        if all_pr_aucs:
+            metrics['mean_pr_auc'] = np.mean(all_pr_aucs)
+        if all_mccs:
+            metrics['mean_mcc'] = np.mean(all_mccs)
     
     return metrics
 
 
-def train_epoch(model, dataloader, optimizer, device):
+def train_epoch(model, dataloader, optimizer, device, pos_weights=None):
+    """
+    Train for one epoch with Focal Loss and class weighting.
+    
+    Args:
+        model: ToxD4C model
+        dataloader: Training data loader
+        optimizer: Optimizer
+        device: Device (cpu/cuda)
+        pos_weights: Optional pre-computed positive class weights [num_cls_tasks]
+    """
     model.train()
     total_loss = 0.0
     total_cls_loss = 0.0
     total_reg_loss = 0.0
     num_batches = 0
     
-    classification_criterion = nn.BCEWithLogitsLoss(reduction='none')
+    # Use Focal Loss with gamma=2.0 for classification (handles class imbalance)
+    # If pos_weights provided, use inverse frequency weighting
+    focal_gamma = model.config.get('focal_gamma', 2.0)
+    if pos_weights is not None:
+        classification_criterion = FocalLoss(gamma=focal_gamma, pos_weight=pos_weights.to(device), reduction='none')
+    else:
+        classification_criterion = FocalLoss(gamma=focal_gamma, reduction='none')
+    
     regression_criterion = nn.MSELoss(reduction='none')
 
     # Get task weights from config
@@ -171,28 +231,31 @@ def train_epoch(model, dataloader, optimizer, device):
                 logger.warning(f"NaN in regression output at batch {batch_idx}")
                 continue
             
-            cls_loss = safe_loss_computation(
-                cls_preds, cls_labels, cls_mask,
-                lambda p, t: classification_criterion(p, t).mean()
-            )
+            # Focal Loss with mask-aware computation
+            cls_loss = classification_criterion(cls_preds, cls_labels, mask=cls_mask)
             
             reg_loss = safe_loss_computation(
                 reg_preds, reg_labels, reg_mask,
                 lambda p, t: regression_criterion(p, t).mean()
             )
             
-            # Apply task weights
+            # Apply task weights with Focal Loss
             weighted_cls_loss = 0.0
-            if cls_preds.numel() > 0:
+            if cls_preds.numel() > 0 and len(cls_task_names) > 0:
                 for i, task_name in enumerate(cls_task_names):
-                    weight = task_weights.get(task_name, 1.0)
-                    weighted_cls_loss += safe_loss_computation(
-                        cls_preds[:, i], cls_labels[:, i], cls_mask[:, i],
-                        lambda p, t: classification_criterion(p, t).mean()
-                    ) * weight
-                weighted_cls_loss /= len(cls_task_names) if len(cls_task_names) > 0 else 1.0
+                    task_weight = task_weights.get(task_name, 1.0)
+                    task_mask = cls_mask[:, i]
+                    if task_mask.sum() > 0:
+                        # Per-task focal loss
+                        task_loss = classification_criterion(
+                            cls_preds[:, i:i+1], 
+                            cls_labels[:, i:i+1], 
+                            mask=task_mask.unsqueeze(1)
+                        )
+                        weighted_cls_loss += task_loss * task_weight
+                weighted_cls_loss /= len(cls_task_names)
             else:
-                weighted_cls_loss = cls_loss # Fallback if no classification tasks
+                weighted_cls_loss = cls_loss  # Fallback if no classification tasks
 
             weighted_reg_loss = 0.0
             if reg_preds.numel() > 0:
@@ -359,12 +422,15 @@ def evaluate_model(model, dataloader, device):
     
     metrics = {}
     
+    cls_task_names = model.config.get('classification_tasks_list', [])
+    reg_task_names = model.config.get('regression_tasks_list', [])
+    
     if all_cls_preds:
         cls_preds = torch.cat(all_cls_preds, dim=0)
         cls_targets = torch.cat(all_cls_targets, dim=0)
         cls_masks = torch.cat(all_cls_masks, dim=0)
         
-        cls_metrics = compute_metrics(cls_preds, cls_targets, cls_masks, 'classification')
+        cls_metrics = compute_metrics(cls_preds, cls_targets, cls_masks, 'classification', task_names=cls_task_names)
         metrics.update(cls_metrics)
     
     if all_reg_preds:
@@ -372,7 +438,7 @@ def evaluate_model(model, dataloader, device):
         reg_targets = torch.cat(all_reg_targets, dim=0)
         reg_masks = torch.cat(all_reg_masks, dim=0)
         
-        reg_metrics = compute_metrics(reg_preds, reg_targets, reg_masks, 'regression')
+        reg_metrics = compute_metrics(reg_preds, reg_targets, reg_masks, 'regression', task_names=reg_task_names)
         metrics.update(reg_metrics)
     
     avg_loss = total_loss / num_batches
@@ -531,6 +597,31 @@ def main():
     )
     
     logger.info("Starting training with ReduceLROnPlateau scheduler...")
+    
+    # Compute class weights for handling class imbalance (inverse frequency weighting)
+    logger.info("Computing class weights for imbalanced data...")
+    pos_weights = None
+    try:
+        all_labels = []
+        all_masks = []
+        for batch in train_loader:
+            all_labels.append(batch['classification_labels'])
+            all_masks.append(batch['classification_mask'])
+        
+        all_labels = torch.cat(all_labels, dim=0)
+        all_masks = torch.cat(all_masks, dim=0)
+        
+        pos_weights = compute_class_weights(
+            all_labels, all_masks, 
+            method='inverse_freq',  # Use inverse frequency weighting
+            clip_range=(0.1, 10.0)  # Prevent extreme weights
+        )
+        logger.info(f"Computed pos_weights (sample): {pos_weights[:5].tolist()}")
+        logger.info(f"Class weight range: [{pos_weights.min():.2f}, {pos_weights.max():.2f}]")
+    except Exception as e:
+        logger.warning(f"Could not compute class weights: {e}. Using uniform weights.")
+        pos_weights = None
+    
     best_val_loss = float('inf')
     patience = 15
     patience_counter = 0
@@ -539,7 +630,7 @@ def main():
         logger.info(f"\nEpoch {epoch + 1}/{args.num_epochs}")
         
         train_loss, train_cls_loss, train_reg_loss = train_epoch(
-            model, train_loader, optimizer, device
+            model, train_loader, optimizer, device, pos_weights=pos_weights
         )
         
         val_metrics, val_loss, val_cls_loss, val_reg_loss = evaluate_model(
@@ -563,7 +654,19 @@ def main():
             
             if cls_aucs:
                 avg_auc = np.mean(cls_aucs)
-                logger.info(f"Average AUC: {avg_auc:.4f}")
+                logger.info(f"Average ROC-AUC: {avg_auc:.4f}")
+            
+            # Log imbalance-robust metrics
+            pr_aucs = [v for k, v in val_metrics.items() if 'pr_auc' in k]
+            mccs = [v for k, v in val_metrics.items() if 'mcc' in k]
+            
+            if pr_aucs:
+                avg_pr_auc = np.mean(pr_aucs)
+                logger.info(f"Average PR-AUC: {avg_pr_auc:.4f}")
+            
+            if mccs:
+                avg_mcc = np.mean(mccs)
+                logger.info(f"Average MCC: {avg_mcc:.4f}")
             
             if r2_scores:
                 avg_r2 = np.mean(r2_scores)

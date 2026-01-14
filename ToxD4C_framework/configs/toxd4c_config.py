@@ -127,6 +127,11 @@ def get_enhanced_toxd4c_config() -> Dict[str, Any]:
         'use_contrastive_learning': True,
         'contrastive_temperature': 0.1,
         'contrastive_weight': 0.3,
+
+        # Focal Loss for handling class imbalance
+        'use_focal_loss': True,
+        'focal_gamma': 2.0,  # Focusing parameter (higher = more focus on hard examples)
+        'use_class_weights': True,  # Use inverse frequency class weighting
         
         'learning_rate': 1e-4,
         'weight_decay': 1e-5,
